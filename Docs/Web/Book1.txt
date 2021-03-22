@@ -1,0 +1,16 @@
+文档:
+http://www.6502.org/tutorials/6502opcodes.html
+
+教程:
+http://wilsonminesco.com/6502primer/
+https://www.atariarchives.org/mlb/
+http://www.emulator101.com/6502-emulator.html
+
+
+PDF网站下载:
+http://seriouscomputerist.atariverse.com/pages/resource/resource.language.htm
+http://seriouscomputerist.atariverse.com/media/pdf/book/6502%20Assembly%20Language%20Programming.pdf
+https://www.analog.com/media/en/training-seminars/design-handbooks/microprocessor-systems-handbook/Microprocessor_Systems_Handbook.pdf
+http://www.classiccmp.org/cpmarchives/trs80/Library/Books/
+ftp://bitsavers.informatik.uni-stuttgart.de/pdf/osborne/osborne1/
+ftp://bitsavers.informatik.uni-stuttgart.de/pdf/osborne/books/Osborne_An_Introduction_to_Microcomputers_Volume_2_Sep78.pdf

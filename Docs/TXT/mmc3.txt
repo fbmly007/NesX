@@ -1,0 +1,211 @@
+-------------------------------
+Nintendo MMC3 infomation
+-------------------------------
+by goroh
+mail: goroh_kun@geocities.co.jp
+date: 1997/3/27
+
+(1) MMC3の仕様
+
+$8000-$9FFF の偶数番地(reg0)
+bit CP---ccc
+C: Swap CHR $0000-$0FFF <=> $1000-$1FFF
+	0: Disable
+	1: Enable
+P: Swap PRG $8000-$9FFF <=> $C000-$DFFF
+	0: Disable
+	1: Enable
+ccc: bank switch command
+	0: set CHR page number $0000-$07FF($1000-$17FF)
+	1: set CHR page number $0800-$0FFF($1800-$1FFF)
+	2: set CHR page number $1000-$13FF($0000-$03FF)
+	3: set CHR page number $1400-$17FF($0400-$07FF)
+	4: set CHR page number $1800-$1BFF($0800-$0BFF)
+	5: set CHR page number $1C00-$1FFF($0C00-$0FFF)
+	6: set PRG page number $8000-$9FFF($C000-$DFFF)
+	7: set PRG page number $A000-$BFFF
+※()内はSwapが起きているときに切替えが行われるアドレス。
+
+
+$8000-$9FFF の奇数番地(reg1)
+CHR or PRG page number
+ページの指定単位はCHRの場合1Kbyte,PRGの場合8Kbyteになる。
+commandが0や1のときは第１ビットは切り捨てられ、偶数ページのみが
+指定される。
+
+
+$A000-$BFFF の偶数番地(reg2)
+bit -------M
+M: Mirroring H/V Setting
+	0: Mirror H
+		$2000-$23FF V
+		$2400-$27FF H
+		$2800-$2BFF V
+		$2C00-$2FFF H
+	1: Mirror V
+		$2000-$23FF V
+		$2400-$27FF V
+		$2800-$2BFF H
+		$2C00-$2FFF H
+
+
+$A000-$BFFF の奇数番地(reg3)
+bit S-------
+S: Battery Backup RAM Enable/Disable
+	1: Enable
+	0: Disable
+
+
+$C000-$DFFF の偶数番地(reg4)
+IRQを発生させるまで何回NMIを待機するかを設定
+	
+
+$C000-$DFFF の奇数番地(reg5)
+reg4に転送する値の設定
+
+
+$E000-$FFFF の偶数番地(reg6)
+reg5の値をreg4に転送し、IRQをDisableにする。
+
+
+$E000-$FFFF の奇数番地(reg7)
+IRQをEnableにする。
+
+
+(2) Nesticle MMC3の仕様
+NesticleのMMC3は実際のMMC3とは仕様が異なるが、そのバグを利用し
+パッチを当ててNesticle上で動作するようにしたロムが多数存在する。
+
+$8000-$9FFF の偶数番地(reg0)
+bit cc---ccc
+ccc: bank switch command
+	#$00: set CHR page number $0000-$07FF
+	#$01: set CHR page number $0800-$0FFF
+	#$02: set CHR page number $1000-$13FF
+	#$03: set CHR page number $1400-$17FF
+	#$04: set CHR page number $1800-$1BFF
+	#$05: set CHR page number $1C00-$1FFF
+	#$06: set PRG page number $8000-$9FFF
+	#$07: set PRG page number $A000-$BFFF
+	#$80: set CHR page number $1000-$17FF
+	#$81: set CHR page number $1800-$1FFF
+	#$82: set CHR page number $0000-$03FF
+	#$83: set CHR page number $0400-$07FF
+	#$84: set CHR page number $0800-$0BFF
+	#$85: set CHR page number $0C00-$0FFF
+	#$46: set PRG page number $C000-$CFFF
+	#$47: set PRG page number $A000-$BFFF
+
+(3) 注意点
+reg0($8000-$9FFFの偶数番地)の第7bit,第8bitの対応がエミュレータに
+よってまちまちだが、これはこのドキュメントのものが正解である。
+第7bit,第8bitは
+
+(4) 考察
+数ヶ月前に登場したNesticle0.42はCHRを1Kbyteごとにページを指定できる
+マッパーがこのバグ付きMMC3しかなかったために、このマッパーを利用すること
+が行われた。また、当時(いまも？)MMC3が割り込み処理が正確にエミュレートされている
+こともMMC3の変換物が増えた理由の１つである。
+これはNesticleやパッチを当てた人が犯した罪とも考えられるが、こうまでしてNesticle
+でゲームをやりたいと言う人がいるほど当時すばらしいエミュレータだった。
+対応策としては正常なMMC3のほかに、Nesticle用のMMC3も別のマッパーの１つとする
+事が必要になる。
+
+(5) 付録
+
+MMC3を理解するためのプログラム
+
+byte chr01,chr23,chr4,chr5,chr6,chr7,chr8;    /*キャラクタページ保存用レジスタ*/
+byte prg0,prg1;                               /*プログラムページ保存用レジスタ*/
+byte command;                                 /*コマンド保存用レジスタ*/
+byte chr_swap,prg_swap;                       /*バンク状態保存用レジスタ*/
+byte irq_counter,irq_counter_sub;             /*IRQ設定用*/
+
+/*キャラクタバンク割り当て用関数*/
+chr_bank(byte chr0,byte chr1,byte chr2,byte chr3,byte chr4,byte chr5,byte chr6,byte chr7);
+
+/*プログラムバンク割り当て用関数*/
+prg_bank(byte prg0,byte prg1,byte prg2,byte prg3);
+
+/*ミラーリング設定用関数*/
+mirror(byte mir0,byte mir1,byte mir2,byte mir3);
+
+mmc3(address,data){
+	switch(address & 0xe001) { /*アドレスにマスクをかける*/
+	case 0x8000:
+		if(data & 0x80){
+			chr_bank(chr4,chr5,chr6,chr7,chr01,chr01+1,chr23,chr23+1);
+			chr_swap=1;
+		}else{
+			chr_bank(chr01,chr01+1,chr23,chr23+1,chr4,chr5,chr6,chr7);
+			chr_swap=0;
+		}
+		if(data & 0x40){
+			prg_bank(prg0,prg1,max_prg-1,max_prg);
+			prg_swap=1;
+		}else{
+			prg_bank(max_prg-1,prg1,prg0,max_prg);
+			prg_swap=0;
+		}
+		command = data & 0x07;
+		break;
+		
+	case 0x8001:
+	
+		switch(command) {
+		case 0: chr01 = data & 0xfe;
+			break;
+		case 1: chr23 = data & 0xfe;
+			break;
+		case 2: chr4 = data;
+			break;
+		case 3: chr5 = data;
+			break;
+		case 4: chr6 = data;
+			break;
+		case 5: chr7 = data;
+			break;
+		case 6: prg0 = data;
+			break;
+		case 7: prg1 = data;
+			break;
+		}
+		
+		
+		if(chr_swap)
+			chr_bank(chr4,chr5,chr6,chr7,chr01,chr01+1,chr23,chr23+1);
+		else
+			chr_bank(chr01,chr01+1,chr23,chr23+1,chr4,chr5,chr6,chr7);
+		if(prg_swap)
+			prg_bank(prg0,prg1,max_prg-1,max_prg);
+		else
+			prg_bank(max_prg-1,prg1,prg0,max_prg);
+		break;
+	case 0xa000:
+		if(data & 0x01)
+			mirror( V, V, H, H);
+		else
+			mirror( V, H, V, H);
+		break;
+	case 0xa001:
+		if(data & 0x80)
+			enable_battery_buckup_ram();
+		else
+			disable_battery_buckup_ram();
+		break;
+	case 0xc000:
+		irq_counter=data;
+		break;
+	case 0xc001:
+		irq_counter_sub=data;
+		break;
+	case 0xe000:
+		irq_counter=irq_counter_sub;
+		disable_irq();
+		break;
+	case 0xe001:
+		enable_irq(irq_counter);
+		break;
+	}
+}
+

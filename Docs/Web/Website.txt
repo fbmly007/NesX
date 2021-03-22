@@ -1,0 +1,14 @@
+很不错的教程站, 学习汇编用的
+https://patater.com/gbaguy/nesasm.htm
+
+MagicKit (整合包, 内含NESASM的修改版)
+http://www.magicengine.com/mkit/
+
+
+很不错的论坛
+www.RomHacking.net
+
+
+https://github.com/RetroPie/RetroPie-Setup/wiki/Nintendo-Entertainment-System
+
+skip.org

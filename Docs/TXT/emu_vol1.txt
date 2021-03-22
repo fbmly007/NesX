@@ -1,0 +1,816 @@
+"How Do I Write an Emulator?",  Part 1, R1.00
+by Daniel Boris (dboris@home.com)
+October 17, 1999
+
+
+1.0 Introduction
+I have often seen people ask the question "How do I write and emulator?" This is 
+a very difficult question to answer since it is a very complex topic. In this 
+article I will attempt to teach the basics of emu programming. This article will 
+not turn you into an emulator expert nor will it give step by step instructions 
+on how to write a specific emulator. It will teach the basic concepts needed to 
+understand emulation and give you a good place to start.  What I will be 
+teaching here is how "I" write an emulator. These techniques are not the only 
+way of doing things but they will show you the basic concepts, which you can 
+build on and improve.
+
+1.1 Prerequisites
+I will attempt to keep this article as basic as possible, but I do have to 
+assume that you (the reader) have a basic level of starting knowledge. First, 
+you should know how to program in some language. I really can't teach 
+programming in general in this article and attempting to learn emu programming 
+and general programming at the same time is a very difficult task. If you do not 
+know how to program I recommend learning that first with some simple projects 
+then move on to learning emu programming. I am going to try to keep this as non-
+language specific as possible but I will eventually have to get into some code 
+examples, in which case I will use my native language, C. C is a popular 
+language for writing emulators, it's platform independent, and it's easy to find 
+information on. I will try to explain things clearly enough so that even if you 
+don't know C you will still understand what the code is doing.
+
+The other perquisite is that you understand the binary and hexadecimal numbering 
+systems and how to convert between binary, decimal and hex. When you are working 
+at the hardware level everything is numbers, so it is very important to 
+understand how these numbering systems work and I will be using all three 
+systems liberally in this article.
+
+1.2 What is an emulator?
+Before we discuss how to write an emulator we really need to know what an 
+emulator is. An emulator is a program that runs on a specific platform or 
+platforms (PC, Mac, Unix, etc) that allows you to run software written for a 
+different platform (arcade game, console system, computer etc.) For clarity we 
+will call the system the emulator is running on the host system and the system 
+that is being emulated the target system. The emulator is basically a program 
+that simulates the behavior of the target systems hardware which allows the host 
+system to run software written specifically for the target system.
+
+For example if I want to run the arcade game Pac-Man on a PC I would write an 
+emulator on the PC that simulates the hardware in the arcade game Pac-Man. I can 
+then load the software that runs on the Pac-Man hardware into the emulator and 
+run it on the PC just like it was running on the real hardware.
+
+
+2.0 Hardware Basics
+Before we can get into the discussion of how to write an emulator we need to 
+understand the basics of how microprocessor based hardware works. When it comes 
+to writing emulators the topics of hardware and software are inexorably tied 
+together. You really need a good understanding of both to be able to effectively 
+write emulators.
+
+Every processor-based system has three major components, the processor, memory, 
+and IO hardware.
+
+
+2.1 The Processor
+The heart of the system is the microprocessor. The processor reads instructions 
+from memory and does what these instructions tell it to do. An instruction may 
+tell the processor to read a number from memory, add two numbers together, 
+compare one number to another, etc. The processor will execute these 
+instructions sequentially, it will read an instruction execute it, read the next
+execute it, and so on. 
+
+There are many different types of processors and most are identified by a 
+number. Some common processors you might have heard of are the 6502, Z80, 6809, 
+68000, etc. Each processor does the same basic thing as I described above but 
+each does it in a different way. We also sometimes refer to processor 
+"families". These are group of processors, usually made by the same company, 
+which are all very similar. For example the 68K processor family from Motorola 
+includes the 68000, 68010, and 68020. Each of these processors is similar but 
+each is slightly more advanced then the previous.
+
+2.2 Processor Registers
+Every processor has a series of internal registers that are used to store data, 
+addresses and to control the processor. 
+
+Program Counter
+The most common register that you will find on all processors is the Program 
+Counter (PC). The PC holds the address where the next instruction will be loaded 
+from memory. The PC is initialized to some know state when the processor is 
+reset and increments as each byte of each instruction is read. The PC can also 
+be changed using jump and branch type instructions.
+
+Working Registers
+Processors have 1 or more "working registers" which are used to hold data that 
+the processor needs to operate on. The 6502 for example has three working 
+registers, the Accumulator, the X register and the Y register. The accumulator 
+is used to hold data used in mathematical operations and also receives the 
+result of the operations. The X and Y registers can also be used to hold general 
+data, but they also have the special purpose of being used as counters.
+
+Stack Pointer
+Most processors have a special area of memory called the stack. The processor 
+accesses the stack using what is called the LIFO method, Last In First Out. This 
+means that the last piece of data to be put (or pushed) onto the stack will be 
+the first piece to be retrieved (or pulled) from the stack. The stack is very 
+handy for handling things like subroutine calls. For example, when the processor 
+encounters a subroutine call it will push the current program counter onto the 
+stack, then jump to the subroutine. When the subroutine ends and the processor 
+needs to return, it pulls the old PC off the stack thus picking up where it left 
+off. Processors usually have instructions which allow the programmer to manually 
+push and pull values from the stack.
+
+The Stack Pointer(SP)is used to keep track of the current position of the stack. 
+For example the stack on the 6502 is at memory locations $1ff-$100, it starts at 
+$1ff and works it's way down towards $100. The stack pointer is 8 bits wide so 
+it would start out at $ff (the processor knows it really means $1ff). When a 
+value is pushed onto the stack it will be put at memory location $1ff and then 
+the SP will be de-incremented to it points to $1fe. When data is pulled of the 
+stack, the SP is incremented, then the data is read from that memory location.
+
+Status Register
+The status register(s) usually serve two purposes. First they allow you to 
+control certain aspects of the processor. For example there may be a bit in the 
+status register that you can write to that enables or disables interrupts.
+
+The other important part of the status register are the status flags. When 
+instructions are executed they will often effect the state of one or more flag 
+bits in the status register. For example the 6502 has a flag called the Zero 
+Flag. Whenever the execution of an instruction results in a 0 this flag will be 
+set to 1, and if an instructions results in anything else this flag is set to 0. 
+
+2.3 Memory
+Memory is where the instructions that the processor executes and the data that 
+these instructions act on is stored. There are 2 major types of memory, RAM and 
+ROM. RAM stands for Random Access Memory and can be both written to and read 
+from by the processor. ROM stands for Read Only Memory and can only be read 
+from, not written to. 
+
+2.4 IO
+IO is the hardware that allows the processor to access the outside world. It 
+allows it to get input from the user and to output results back to the user. IO 
+includes things like sound circuitry, video circuits, controller inputs, and 
+communication chips that communicate with external devices such as disk drives 
+and printers. IO also includes things like timer circuits, which allow the 
+processor to keep track of "real world" time.
+
+2.5 Buses
+For the processor, memory and IO to work together there needs to be some sort of 
+interconnection between them. This is where buses come in. Buses are basically a 
+group of wires that connect the devices in a system together. For example the 
+data bus carries data between the processor, memory and IO devices. Each line in 
+a bus carries 1 bit of information. So if a processor needs to move data 8 bits 
+at a time it would need a bus that is 8 bits wide. There are three types of 
+buses in a processor-based system, the data bus, the address bus, and the 
+control bus. You can think of these buses as the what, where and how of moving 
+data around in the system. The data bus tells what to move, the address bus 
+tells where to move it and the control bus tells how to move it.
+
+2.5.1 The Data Bus
+The data bus is the path that data takes between the processor and the RAM and 
+IO circuits. The data bus is bi-directional meaning that the same bus is used to 
+send data from the processor to memory as is used to transfer data from memory 
+back to the processor. The data bus is usually either 8 bits (1 byte), 16 bits 
+(1 word), or 32 bits (1 longword) wide, although there are some exceptions to 
+this.
+
+2.5.2 The Address Bus
+The address bus is used by the processor to tell the hardware where it wants 
+data to go to or where it wants to get data from. So if the processor wants to 
+write something out to memory it puts the data on the data bus and the address 
+it wants to write to on the address bus. Every processor can access a limited 
+number of memory addresses depending on how big the processors address bus is. 
+If the processor has a 16 bit address bus then it can access 65536 memory 
+locations. These locations are numbered 0 - 65535 ($0 - $FFFF in hex). The 
+Memory Map for a system tells you what is at each of those locations. For 
+example addresses $0000-$0FFF might be working RAM, $1000-$1FFF might be video 
+RAM, and $2000 might be an IO port that reads the position of a joystick. The 
+circuitry in the system that actually implements the memory map is called an 
+address decoder. This circuit looks at the addresses coming from the processor 
+and activates the appropriate chip based on that address. This is important 
+since the data and address bus might be connected to many different chips in the 
+system and you only want one of these activated at any one time.
+
+2.5.3 The Control Bus
+These signals aren't always referred to as a bus, but it is convenient to group 
+them this way. As I said before the Control Bus is the "how" portion of the data 
+transfer. The most important part of the control bus is the Read/Write 
+signal(s). This signal is generated by the processor and indicates to the 
+external hardware if the processor wants to write data to memory or read data 
+from memory. This is obviously important for something like RAM which can be 
+read or written, but it's also important for IO devices since the address 
+decoding could have a read from a specific address do something different than a 
+write to that same address. For example in an arcade game a read from address 
+$2000 might read the state of a joystick, but a write may turn on some lights on 
+the control panel. There are usually other signals on the control bus besides 
+R/W and these will vary from processor to processor. 
+
+2.6 Microcontrollers
+You will sometimes here about a special type of microprocessor called a 
+microcontroller. A microcontroller is a microprocessor with RAM, ROM, and/or IO 
+built into the same chip. It's very possible to have a microcontroller with RAM, 
+ROM code and I/O ports all built in so it needs almost no external circuits to 
+operate.
+
+2.7 Interrupts
+Interrupts are external signals that come into the processor and interrupt the 
+normal flow of a program. When an interrupt signal is activated the processor 
+stops what it is currently doing, saves some information about where it 
+currently is in the program, and then jumps to a specific address in memory and 
+executes an "interrupt handler" routine. When this routine is finished executing 
+a special instruction tells the processor that the interrupt handler is done and 
+to resume what it was doing when the interrupt occurred. The exact details of 
+how interrupts are caused and handled will vary from CPU to CPU.
+
+Some processors also have what are called exceptions. Exceptions are similar to 
+interrupts but are usually caused by something inside the processor. For example 
+a processor that has opcodes used for division will probably have a divide by 
+zero exception since dividing by zero is mathematically invalid. So if a program 
+tried to divide by zero the processor would jump to an exception handler routine 
+for divide by zero.
+
+2.8 Memory Mapped IO / Port Mapped IO
+There are two ways that processors can access IO devices, memory mapped IO and 
+port mapped IO. 
+
+With memory mapped IO, the IO devices are accessed in the same way that RAM and 
+ROM are accessed. The address decoding circuitry determines if the processor is 
+accessing memory or an IO device and enables the appropriate device. This is the 
+way that the 6502 processor (among others) accesses IO.
+
+With port mapped IO, the processor has special instructions that are used to 
+access IO devices. The instructions will activate a signal output from the 
+processor which tells the external hardware that it is trying to do an IO access 
+as opposed to a memory access. Port mapped IO is found on the Z80 and Intel 
+80x86 processors among others.
+
+Any processor can do memory mapped IO, even if they also support port mapped IO, 
+it all depends on how the external hardware is configured. 
+
+2.9 Big/Little Endian
+Another issue that is important to emulation is "endianness". Endian determines 
+how a processor handles multi byte numbers. Big Endian processors store the most 
+significant byte first and the least significant byte last. Little endian 
+processors store the bytes in the opposite way. Here is an example; lets say we 
+want to store the hex number $1234 at memory location $1000. In a big endian 
+processor it will be stored like this:
+
+$1000  $12
+$1001  $34
+
+in a little endian processor it will be stored like this:
+
+$1000  $34
+$1001  $12
+
+This also applies to 32 bit numbers. For example lets store $11223344 at 
+location $1000. 
+
+Big endian:                 Little endian
+$1000  $11	                $1000  $44
+$1001  $22                  $1001  $33
+$1002  $33                  $1002  $22
+$1003  $44                  $1003  $11
+
+Each processor has a specific endianess. For example the 6502 is little endian 
+and the 68000 series is big endian. There are also a few processors that can be 
+configured to work either way.
+
+
+3.0 The CPU Core
+Just as the CPU is the heart of a system, the CPU core is the heart of an 
+emulator. It is the CPU core's job to read the instructions from memory and 
+simulate their behavior.
+
+The first question to ask about a CPU core is whether you want to write your own 
+or use a pre-existing core. Most of the popular processors have publicly 
+available CPU cores which can save you the trouble of writing your own. Writing 
+a CPU core is a very tedious and time consuming process, and CPU cores are 
+notorious for being difficult to debug.
+
+3.1 Processor Registers
+The first thing you need in a CPU core is to define variables for the various 
+internal registers in the CPU. So for example the 6502 CPU has 6 internal 
+registers; the program counter, the stack pointer, the status register, the X,Y 
+registers and the accumulator. The program counter is 16-bits wide and the 
+others are all 8-bits so they could be defined in C like this:
+
+unsigned int program_counter;
+unsigned char stack_pointer,status_register,x_reg,y_reg,accumulator;
+
+The status register is composed of a series of 1 bit flags. For example if the 
+result of an instruction is zero then the zero flag is set otherwise it is 
+cleared. The individual flags are used extensively by the CPU, but they are 
+rarely used in the form of a complete 8-bit number so it is more efficient to 
+handle each flag as a separate variable:
+
+int    zero_flag;
+int    sign_flag;
+int    overflow_flag;
+int    break_flag;
+int    decimal_flag;
+int    interrupt_flag;
+int    carry_flag;
+
+In those few cases when the whole status byte is needed we can call a routine to 
+assemble these back into a complete byte.
+
+3.1 CPU Reset
+The next routine we need is one to simulate a reset of the CPU. When a system 
+starts up it usually holds the processor in reset for a short period of time 
+this is called a Power On Reset. The POR will force the internal registers in 
+the processor to a known state. The data sheet for a processor will usually 
+specify what all the registers are set to during a reset. Accurately simulating 
+a reset is usually not important since a good programmer should set all the 
+registers to a known state at the start of his program, but there are times that 
+this is not done and the programmer relies on the reset state to be something 
+specific. I ran into this situation on a few occasions while working on an Atari 
+2600 console emulator. The reset routine for the 6502 could look like this:
+
+1  void reset_cpu(void)
+2  {
+
+3  status_register = 0x20;       
+4  zero_flag = sign_flag = overflow_flag = break_flag = 0;
+5  decimal_flag = interrupt_flag = carry_flag = 0;
+6  stack_pointer = 0xFF;
+7  program_counter = (memory[0xFFFD] << 8) | memory[0xFFFC];
+8  clk=0;
+9  accumulator=x_reg=y_reg=0;
+10 }
+
+In line 3 we set the initial state of the status register. Bit 5 of the status 
+register is unused in the 6502 and always reads as a 1. In lines 4 and 5 we set 
+all the individual flag registers to 0. Line 6 sets the initial value for the 
+stack pointer. Line 7 sets the initial value of the program_counter. The array 
+memory[] represents the memory space of our processor. The starting address for 
+a 6502 program is stored at location $FFFC and $FFFD in memory. The 6502 stores 
+addresses in low byte/hi byte format, so $FFFD contains the upper 8 bits of the 
+address and $FFFC the lower 8 bits. This line assembles the 2 bytes into a 16-
+bit address. Don't worry about line 8 for now we will talk about that more 
+later. Finally line 9 sets the initial value of the 3 CPU working registers, X,Y 
+and the accumulator.
+
+3.2 Execution
+The next thing we need in the CPU core is the actual command execution routine. 
+In this routine we will read the opcodes from memory and call the appropriate 
+routine to simulate the function of that instruction. In C the execution routine 
+could be implemented with a switch/case function like this:
+
+1 switch (memory[program_counter++])  {
+2 case 0:
+3        /* Execute opcode 0 here */
+4        break;
+5 case 1:
+6        /* Execute opcode 1 here */
+7        break;
+        .
+        .
+        .
+        etc..
+}
+
+The address in program_counter tells us where the next opcode to be executed is 
+so we use that to read the opcode from the memory array in line 1. The "++" 
+after program_counter means to increment the value in program_counter after we 
+have used it. So if program counter contains $1000 before this line, the line 
+would read the opcode at location $1000 then increment program counter by 1 so 
+it would contain $1001 when this line is done. Line 2 begins the code for opcode 
+"0". Line 5 begins the code for opcode "1" and this would continue for each 
+opcode.
+
+Lets now look at a sample opcode routine. Lets take the 6502 instruction LDA 
+#$55. This instruction loads the hex value 55 into the accumulator. This 
+instruction is stored in memory as: $A9,$55. The $A9 is the opcode for LDA and 
+the second byte, $55, is the value to be loaded into the accumulator. The code 
+for this would look like:
+
+1 case 0xA9:  /* LDA immediate */
+2        accumulator = memory[program_counter];
+3        program_counter++;    /* C shorthand for program_counter =  
+program_counter + 1 */
+
+4        sign_flag = accumulator & 0x80;
+5        zero_flag = !(accumulator);
+6 break;
+
+
+Line 1 starts our opcode 0xA9 routine. The comment at the end of the line makes 
+it clear which instruction this routine emulates. Line 2 is the actual meat of 
+the instruction. program_counter at this point is pointing to the second byte of 
+the instruction which, as I said above, contains the data to be loaded into the 
+accumulator. So this line just copies that data from memory to the variable 
+accumulator. Line three advances the program counter so it will now be pointing 
+to the next instruction in memory. Line 4 evaluates the 6502's sign flag. The 
+sign flag is always the same as bit 7 of the result of an instruction. So we 
+just use a logical AND to get bit 7 of the accumulator. Line 5 evaluates the 
+6502's zero flag. The zero flag will be 1 if the result of an operation is 0 
+otherwise the zero flag will be 0. This line uses a logical NOT to accomplish 
+this.
+
+This routine demonstrates why emulators can sometimes be very slow. This simple 
+6502 instruction required 4 lines of C code to execute and when this is 
+converted to assembly language by the compiler it will probably require quite a 
+few assembly instructions to simulate 1 6502 instruction.
+
+Lets look at another instruction, the JMP $F000 instruction. This 6502 
+instruction tells the CPU to jump to address $F000 and continue executing the 
+program there. In memory this instruction would look like: $4C,$00,$F0. The $4C 
+is the opcode, the $00,$F0 is the address to jump to in low byte/high byte 
+format. The code for this instruction would look like:
+
+case 0x4c: /* JMP absolute */
+      program_counter = (memory[program_counter+1] << 8) | 
+memory[program_counter];     
+break;
+
+This instruction is pretty simple. We first read the high byte of the new 
+address from memory, shift it up 8 bits, the use a logical OR to combine it with 
+the lower 8 bits. This assembles the two 8 bits parts of the address into a 16-
+bit address. Notice we don't need to increment the program counter at all here 
+since we are explicitly changing it to a new value.
+
+Another example, LDA $1000. This instruction tells the processor to load the 
+byte that is at memory location $1000 into the accumulator. In memory it looks 
+like: $AD,$00,$10. Here is the code:
+
+1 case 0xAD: /* LDA absolute */
+2    addr = (memory[program_counter+1] << 8) | memory[program_counter];     
+3    accumulator = memory_read(addr);
+4    program_counter += 2; /* C shorthand for program_counter = program_counter 
++ 2 */
+5    sign_flag = accumulator & 0x80;
+6    zero_flag = !(accumulator);
+7 break;
+
+This instruction is a little more complicated. In line 2 we get the address that 
+the data is going to be read from. This works the same way as in the JMP 
+instruction, but this time we store it in a temporary variable addr. Line 3 
+reads the data byte from memory that is at the address stored in addr, in our 
+example this would be address $1000. Notice that we do not read the byte 
+directly from our memory array, but instead we call a routine called 
+memory_read(). The reason for this is that we don't know if the byte we are 
+reading is coming from normal RAM/ROM or if it was coming from and IO port, 
+maybe $1000 is the IO port that reads the joystick. If it does happen to be an 
+IO port we will need to execute some extra code so that we can go out and read 
+the status of the real joystick on the host system. So instead of reading 
+directly from memory we call memory_read() which will deal with situations like 
+this. We will talk more about memory_read() in the section on memory. You may 
+wonder why we don't call this routine to read opcodes. The reason for this is 
+that opcodes will always come from RAM or ROM, never from an IO address so we 
+can safely read these from the memory[] array.
+
+This shows that basics of how the CPU opcode emulation is written. The actual 
+details will vary from processor to processor but this shows some of the things 
+you will encounter.
+
+3.3 Timing
+The next thing we need in our CPU core is a way of tracking the passage of time 
+in our emulated system. In the real hardware the CPU is controlled by a clock of 
+a specific frequency. Each instruction that the CPU can execute will take 1 or 
+more of these clock cycles to execute. In our CPU core we are going to do things 
+in reverse, instead of the clock driving the CPU core we are going to have the 
+CPU core drive the clock. For example the LDA immediate instruction we talked 
+about above takes 2 CPU clock cycles to execute. So lets say our CPU input clock 
+is 2Mhz: 1/2Mhz = .0000005 seconds (.5us) per CPU cycle, so our LDA instruction 
+will take 1us to execute. Thus we can say that 1us of emulated time has passed 
+during the execution of that instruction. 
+
+This timing will be used for various things in our emulator, for example it can 
+be used for video timing. Most video displays update every 1/60sec, so we may 
+want to run our CPU for 1/60sec update the display, run the next 1/60sec, update 
+the display again, etc. 
+
+Most CPU cores are implemented to execute for a specific number of clock cycles 
+so we could set our CPU_execute routine up like this:
+
+1 int CPU_execute(int cycles) {
+2 int cycle_count;
+
+3 	cycle_count = cycles;
+4 	do {
+
+5	/* OPCODE execution here */
+
+6	} while(cycle_count > 0);
+
+7	return cycles - cycle_count;
+}     
+
+In line 1 we define our routine CPU_execute() which is passed the number of 
+machine cycles we want the core to execute, which is stored in the variable 
+cycles. In line 3 we copy the number of cycles we want to execute into the 
+variable cycle_count, you will see why in line 7. In line 4 we start a loop. 
+Line 5 is where our select/case statement that executes the CPU opcodes would 
+be. It's not shown here but in each of these opcode routines we need to de-
+increment cycle_count by the number of cycles that instruction would take. So in 
+our routine for "LDA immediate" we would put:
+
+cycle_count -= 2; 
+
+In line 6 we see if cycle_count is less then 0 which would indicate that we have 
+executed all the requested machine cycles. Finally in line 7 we exit from the 
+routine and return the actual number of machine cycles that was executed. This 
+becomes important when we are writing an emulator that requires very accurate 
+timing. The reason for this is that the CPU core could very easily run for more 
+machine cycles then we requested it to. Lets take an very simple example, lets 
+say we ask the CPU core to execute 6 cycles. The first instruction it executes 
+takes 5 cycles, so we now have 1 cycle left. If the next instruction takes 4 
+cycles to execute then that means the CPU core will run for 3 more cycles then 
+we requested. By returning the actual number of cycles executed the main 
+emulator routine can compensate for this.
+
+3.3 Interrupts
+
+As mentioned earlier interrupts are something the "interrupts" the normal flow 
+of a program running on a microprocessor. Dealing with interrupts in an emulator 
+can sometimes be very tricky. In a real system interrupts will occur independent 
+of the processor, in an emulator this is not really possible to do. In an 
+emulator we have to be actively looking for the event that causes an interrupt 
+and when it occurs we then call a routine which cause the processor to handle 
+and interrupt call. Before we get to the actual interrupt routine lets define a 
+couple C macros to make our life easier.
+
+#define PUSH(b) 		memory[stack_pointer+0x100]=(b); stack_pointer--
+#define PULL()		memory[(++stack_pointer)+0x100]
+#define GET_SR()		((sign_flag ? 0x80 : 0) |\
+				 (zero_flag ? 0x02 : 0) |\
+				 (carry_flag ? 0x01 : 0) |\
+				 (interrupt_flag ? 0x04 : 0) |\
+				 (decimal_flag ? 0x08 : 0) |\
+				 (overflow_flag ? 0x40 : 0) |\
+				 (break_flag ? 0x10 : 0) | 0x20)
+
+Macros are an easy way of defining code that we will use a lot in our programs. 
+Anytime the C compiler encounters a macro in your program it will replace it 
+with the code in the macro definition. For example, if the compiler encountered 
+this piece of code:
+
+PUSH(accumulator);
+
+It would replace it with:
+
+Memory[stack_pointer+0x100] = (accumulator); stack_pointer--;
+
+The first macro we define is called PUSH and it pushed a value onto the stack. 
+First it calculates the current address of the top of the stack by adding $100 
+to the stack pointer (SP). Remember the stack in the 6502 is from $100-$1FF so 
+we have to add the $100 to get the correct address. Once it has this it puts the 
+data at that address. Finally it decrements the stack pointer (SP). We decrement 
+because the stack starts at $1FF and works down to $100. 
+
+The second macro we define is called PULL and it pulls a value off the stack. If 
+you are not familiar with C this line might look a bit confusing, but what it 
+does is increment the stack pointers (SP), add $100 to it, then retrieve that 
+value at that memory location. 
+
+The final macro is something I talked about earlier. For speed and convenience we 
+are keeping each of the processor flags in a separate variable. Occasionally we 
+will need these assembled back into a single byte and that's what this macro does. 
+Once again, if you don't understand C you might not understand the macro but 
+trust me on what it does.
+
+Now we can look at the interrupt routine:
+
+1 void IRQ() {	
+2 	if (!interrupt_flag) {
+3		PUSH((program_counter & 0xFF00) >> 8);
+4		PUSH(program_counter & 0xFF); 
+5		PUSH(GET_SR());  
+6 interrupt_flag = 1;
+7 program_counter = (memory[0xFFFF] << 8) | memory[0xFFFE];
+8		cycle_count-= 7;
+9	}
+10  }
+
+
+4.0 Memory
+The next thing we need to know how to emulate is memory. 
+
+4.1 Allocating Memory
+The most straightforward way of handling memory is to allocate a block of memory 
+the full size of the memory space for each processor you are emulating. For 
+example a 6502 processor has a 65536 bytes memory space, so in C we would 
+allocate it like this:
+
+unsigned char *memory;
+memory = (unsigned char *)malloc(65536);
+
+The first line creates a pointer called memory. We make it an unsigned char so 
+that we can access this memory block 1 byte at a time. The second line allocates 
+64K of RAM and points the pointer 'memory' to that block. 
+
+We can now use this block of memory like the processor's address memory. For 
+example if we needed to put the value $55 at memory location $1000 we would 
+write:
+
+memory[0x1000] = 0x55;
+
+When we are ready to exit from the emulator we need to free up this memory:
+
+free(memory);
+
+
+4.2 Loading memory
+All processor systems must have some sort of permanent memory to at least get 
+them started. This usually comes in the form of a ROM or ROMS. Since these have 
+to be present at startup we need a way to load them into memory before the 
+emulation is started. Here is a simple example of loading a ROM in C:
+
+1  int load_roms(void) {
+2  FILE *fp;
+
+3  fp=fopen("game.rom","rb");
+4  if (!fp) {
+5	printf("Error loading game.rom\n");
+6	return 1;
+7  }
+8 read(&memory[0xF000],1,0x1000,fp); 
+9 fclose(fp);
+10 return 0;
+11 }
+	
+Line 1 starts our rom load routine. We declare it as a int so we can return a 
+value which indicates whether the load was successful or not. In line 2 we 
+create a C file pointer. In line 3 we open the file we want to load, in this 
+case "game.rom". In line 4 we check if line 3 actually succeeded in opening the 
+ROM file. If the file was missing, or named wrong we want to catch this and 
+display an error which is what we do in line 5. Line 6 immediately exits the 
+routine if the ROM failed to open. The "1" in line 6 is returned to the calling 
+routine and in our case indicates an error loading the file, this allows the 
+main emulator routine to take appropriate action if the roms can't be loaded. In 
+line 8 we actually load the data into the emulators memory space. In this case 
+we are assuming we have a $1000 byte ROM that starts at memory locaiton $F000. 
+In line 9 we close the file. In line 10 we return from the routine and return a 
+0 to indicate success.
+
+This is a very simple example of loading a ROM into memory. This works best with 
+fixed length ROMS like the ones used for BIOS ROMS or in arcade machines. 
+Loading console game ROMS can get trickier for a few reasons. First, some 
+console ROM dumps have headers attached to the ROM which aren't part of the 
+actual data. In these cases this header data will have to be loaded separately 
+then the data from the ROM can be loaded into the emulator's memory space. 
+
+Another problem with console ROMS is that they sometime have variable lengths. 
+With these ROMS it will first be necessary to determine the length of the ROM 
+file before you can actually load it. These types of ROMS are also very often 
+"bank switched" meaning that the entire ROM does not get loaded into the 
+emulators memory space at the start. Some of it will be loaded into the memory 
+space and part will be loaded into some temporary memory buffers. The details of 
+bank switching are best left for another time.
+
+
+
+4.3 Memory Handlers
+As I said in the section on the CPU we need a couple routines to handle memory 
+accesses by the CPU core. Whenever the CPU core needs to read data from memory 
+it will call a read handler and whenever it needs to write data to memory it 
+will call a write handler. 
+
+Before we write the handlers lets talk about memory maps. As I said before each 
+device in a system resides at a certain series of addresses in the processors 
+memory space. A memory map tells you what addresses each device is as. Here is a 
+sample memory map:
+
+$0000 - $0FFF  R/W   RAM
+$1000 - $1FFF  R/W   Video RAM
+$2000          R     Read Joystick
+$3000 - $300F  W     Sound chip
+$E000 - $FFFF  R     ROM
+
+Each line lists a range of memory locations, what is at those locations, and 
+whether the locations are read only (R), write only (W) or read/write (R/W). 
+
+From the information in the memory map we can write our memory handlers. The 
+read handler might look something like this:
+
+1 Unsigned char read_memory(unsigned int address) {
+	
+2    If (address < 0x1000 || address > 0xDFFF) return memory[address];
+3    If (address < 0x2000) return vidram[address - 0x1000];
+4    If (address == 0x2000) return read_joystick();
+5    return 0xFF;
+}
+
+In line 1 we declare our read_memory routine. It will return 1 byte so we 
+declare it as an unsigned char. It will be passed the address that the cpu 
+core wants to read from and this will be stored in the variable address. 
+In line 2 we check if we are reading from ram (address < 0x1000) or if we are 
+reading from ROM (address > 0xDFFF) and return the appropriate value from our 
+memory array. 
+In line 3 we handle the video memory in a slightly different way. Video memory 
+is from $1000 to $1fff. Line 2 has already handled addresses under $1000 so 
+these will never make it to line 3, so we only need to see if the address is 
+less the $2000. If it is, then we return a value from an array set aside just 
+for video memory, which you may want to do for various reasons. We would have 
+allocated the array vidram[] to be $1000 bytes long elsewhere in our emulator. 
+Since our vidram[] array is only $1000 bytes long and video memory starts at 
+location $1000 in memory we need to subtract $1000 from address to get the 
+correct location in vidram[]. 
+In line 4 we handle a read of the joystick IO port. From our memory map we see 
+that this is at only one address so we check for only one address and not a 
+range. We then call a routine called read_joystick() which takes care of reading 
+the real joystick on the host system. 
+In line 5 we return a $FF if the address that was being read wasn't in the 
+memory map. Different hardware will return different results on an undefined 
+memory access but emulating this usually isn't important, although sometime it 
+is. While you are developing and emulator it might be good to put a statement 
+like:
+
+Printf("Error undefined read at %x\n",address);
+
+At the end of that routine before the return 0xff. This will let you know that 
+the processor is accessing an undefined address so you can try to figure out 
+why. You may also want to open up a log file and print this to a file so it's 
+easier to keep track of.
+
+The write handler is done in pretty much the same way:
+
+1 void write_memory(unsigned int address,unsigned char data) {
+	
+2    If (address < 0x1000){
+3        memory[address] = data;
+4        return;
+5	}
+6     If (address < 0x2000) {
+7        vidram[address - 0x1000] = data;
+8        return;
+9	}
+10      If (address > 0x2FFF && address < 0x3010) write_sound(address,data);
+11 }
+
+In line 1 we start the routine. It's declared as a void because we are not 
+returning a value from it and we pass it the address to write to and the data to 
+be written. Line 2 checks if we are in the RAM range and if so line 3 writes 
+that data into the memory array. Line 4 exits from the routine. The advantage to 
+this is that we can exit the routine as soon as we have found the address, we 
+don't have to go through the rest of the address checks.
+In lines 6-9 we handle writes to the video ram just like writes to the normal 
+RAM. In line 10 we handle writes to the sound chip. We check if the address is 
+within the range of addresses for the sound chip, then call the routine 
+write_sound() to handle the write.
+
+4.4 Optimizing Memory Handlers
+Memory handlers can have a big impact on the speed of your emulator. The 
+examples I gave in the last section are very basic handlers and are not very 
+efficient. The memory handlers are going to be called a lot by the CPU core 
+especially in 8-bit processors which have fewer internal registers to work with. 
+In a high level language like C when a jump is made to a routine the CPU
+registers of the host machine are saved then restored at the end of the routine. 
+This takes time so we want to avoid jumping out of the CPU core as much as possible. 
+
+We have already taken one step to help this by not calling the memory handler to 
+read opcodes. We know that opcodes are always going to come from RAM or ROM so 
+we can read them directly from the memory array instead of having to do all the 
+decoding.
+
+Another possibility is to eliminate the read and/or write handlers completely, 
+but this can only be done in certain situations. For examples lets say that the 
+only input that a system has is a register that contains the status of the 
+joystick input. To get around using a read handler in this case we could 
+periodically read the joystick on the host system and write this information 
+into the appropriate location in the memory array. Now whenever the processor 
+needs to read the joystick port it can just read it from the memory array 
+instead of having to call a routine to read the host joystick port. 
+
+The write handlers can be a little more tricky to get rid of. If the system you 
+are emulating just writes data to output registers that don't need to be acted 
+on immediately then you may be able to get rid of the write handler. For example 
+maybe the system writes to a port in the video controller chip that sets the 
+background color of the screen. The cpu core can put this directly into the 
+memory array since you won't actually need it until you draw the screen. 
+Unfortunately it's not always this easy. Some systems will have "trigger" 
+addresses. When written to, these addresses trigger something to happen 
+immediately regardless of what data is written to them. Since the data may not 
+change with each write it would not be possible to tell how many times the 
+register was written to if the writes went directly to the memory array.
+
+Another way that this can be optimized is to do some of the address decoding in 
+the CPU core so that calls don't have to be made out of the core every time a 
+memory access happens. One technique for doing this in C is to declare a second 
+array the same size as the memory (lets call it mem_type[] for example). For 
+each location in memory that is IO and needs decoding put a 1 in the mem_type 
+array and leave all the others at 0. In you CPU core put a routine that looks 
+like this:
+
+
+1 Inline mem_write(unsigned int address, unsigned char data) {
+2 if (mem_type[address]) 
+3    	    memory_write_handler(address,data);
+4     else
+5         memory[address] = data;
+6 }
+
+Every time you need to write data in your CPU core call this routine. By 
+declaring this as inline the whole block of code will be substituted whenever 
+the compiler comes across a call to mem_write. The routine will check to see if 
+mem_type for that address is a 1, if it is it jumps out to a traditional memory 
+handler, if it's a 0 then it puts the data directly into the memory array. Being 
+inline will prevent the CPU core from having to constantly jump out to another 
+routine when it does a memory access. The downside to using inline is that it 
+can quickly inflate the size of your code if you are not careful.
+
+Still another option for optimizing is to write the CPU core in assembly 
+language. Since you have finer control of the code in assembly you can integrate 
+the memory handlers a little more closely into the CPU core thus making things 
+more efficient. 
+
+These are just a few ideas on optimizing the memory handlers and there are still 
+other approaches to doing this. You will have to determine what works best for 
+the specific system you are emulating.
+
+
+5.0 Conclusion
+Well this concludes the first part of my emulator how-to. I have touched on some 
+of the basic concepts for writing the core of an emulator but there is still a 
+lot to be covered. Look for future installments that explain some more emulation 
+concepts. 

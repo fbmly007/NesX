@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<!-- saved from url=(0054)https://www.masswerk.at/6502/6502_instruction_set.html -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<title>6502 Instruction Set</title>
+	<meta name="description" content="Instruction set of the MOS 6502/6507/6510 MPU">
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function() {
+	var opcDict = {
+			'ADC': 'Add with carry',
+			'AND': 'And',
+			'ASL': 'Arithmetic shift left',
+			'BCC': 'Branch on carry clear',
+			'BCS': 'Branch on carry set',
+			'BEQ': 'Branch on equal',
+			'BIT': 'Bit test',
+			'BMI': 'Branch on minus',
+			'BNE': 'Branch on not equal',
+			'BPL': 'Branch on plus',
+			'BRK': 'Break / interrupt',
+			'BVC': 'Branch on overflow clear',
+			'BVS': 'Branch on overflow set',
+			'CLC': 'Clear carry',
+			'CLD': 'Clear decimal',
+			'CLI': 'Clear interrupt disable',
+			'CLV': 'Clear overflow',
+			'CMP': 'Compare with accumulator',
+			'CPX': 'Compare with X',
+			'CPY': 'Compare with Y',
+			'DEC': 'Decrement',
+			'DEX': 'Decrement X',
+			'DEY': 'Decrement Y',
+			'EOR': 'Exclusive or',
+			'INC': 'Increment',
+			'INX': 'Increment X',
+			'INY': 'Increment Y',
+			'JMP': 'Jump',
+			'JSR': 'Jump subroutine',
+			'LDA': 'Load accumulator',
+			'LDX': 'Load X',
+			'LDY': 'Load Y',
+			'LSR': 'Logical shift right',
+			'NOP': 'No operation',
+			'ORA': 'Or with accumulator',
+			'PHA': 'Push accumulator onto stack',
+			'PHP': 'Push processor status onto stack',
+			'PLA': 'Pull accumulator from stack',
+			'PLP': 'Pull processor status from stack',
+			'ROL': 'Rotate left',
+			'ROR': 'Rotate right',
+			'RTI': 'Return from interrupt',
+			'RTS': 'Return from subroutine',
+			'SBC': 'Subtract with carry',
+			'SEC': 'Set carry',
+			'SED': 'Set decimal',
+			'SEI': 'Set interrupt disable',
+			'STA': 'Store accumulator',
+			'STX': 'Store X',
+			'STY': 'Store Y',
+			'TAX': 'Transfer accumulator to X',
+			'TAY': 'Transfer accumulator to Y',
+			'TSX': 'Transfer stack pointer to X',
+			'TXA': 'Transfer X to accumulator',
+			'TXS': 'Transfer X to stack pointer',
+			'TYA': 'Transfer Y to accumulator'
+		},
+		addrDict = {
+			'A': 'accumulator (implied)',
+			'abs': 'absolute',
+			'abs,X': 'absolute, X-indexed',
+			'abs,Y': 'absolute, Y-indexed',
+			'#': 'immediate',
+			'impl': 'implied',
+			'ind': 'indirect',
+			'X,ind': 'X-indexed, indirect',
+			'ind,Y': 'indirect, Y-indexed',
+			'rel': 'relative',
+			'zpg': 'zero-page',
+			'zpg,X': 'zero-page, X-indexed',
+			'zpg,Y': 'zero-page, Y-indexed',
+		},
+		overlay;
+	function OPClickHandler() {
+		var opc = this.getAttribute('data-opc');
+		if (opc) {
+			if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+			if (this.blur) this.blur();
+			self.location.href = '#' + opc;
+		}
+	}
+	function OPHoverHandler(event) {
+		var descr = this.getAttribute('data-description');
+		if (descr) {
+			if (event.preventDefault) event.preventDefault();
+			event.cancelBubble = true;
+			event.returnValue = true;
+			if (!overlay) {
+				overlay = document.createElement('div');
+				overlay.id = 'instrOverlay';
+			}
+			overlay.style.left = (this.offsetLeft + 4) + 'px';
+			overlay.style.top = (this.offsetTop + this.offsetHeight + 4) + 'px';
+			overlay.innerHTML = descr + '\n<small>Click for details&hellip;</small>';
+			this.appendChild(overlay);
+		}
+	}
+	function OPHideHandler(event) {
+		if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+	}
+	var rows = document.querySelectorAll('table#opctable tbody tr');
+	for (var r = 0, rl = rows.length; r < rl; r++) {
+		var	cols = rows[r].getElementsByTagName('td'),
+			hi = '$' + '\u200A' + r.toString(16).toUpperCase();
+		for (var c = 0, cl = cols.length-1; c < cl; c++) {
+			var	el = cols[c + 1],
+				inst = hi + c.toString(16).toUpperCase();
+			if (!el.className) {
+				var matches = /^([A-Z]{3})(?:\s(.*))?$/.exec(el.innerHTML);
+				if (matches) {
+					var label = inst + '\nInstr.: ' + opcDict[matches[1]];
+					if (matches[2]) label += '\nAddr.: ' + addrDict[matches[2]];
+					el.setAttribute('data-description', label);
+					el.setAttribute('aria-label', label);
+					el.setAttribute('data-opc', matches[1]);
+					el.className = 'clickable';
+					el.addEventListener('click', OPClickHandler, true);
+					el.addEventListener('mouseover', OPHoverHandler, true);
+					el.addEventListener('mouseout', OPHideHandler, true);
+					continue;
+				}
+			}
+			el.setAttribute('data-description', inst);
+		}
+	}
+	rows = null;
+	document.querySelector('table#opctable').addEventListener('click', OPHideHandler, false);
+}, false);
+</script>
+<style type="text/css">
+h1 { font-family: arial,helvetica,sans-serif; font-size: 24px; }
+h2 {
+	font-family: courier,monospace; font-size: 16px;
+	font-weight: bold;
+	margin: 1.5em 0 1.5em 0;
+}
+table { border-collapse: collapse; position: relative;}
+p,td,th,xmp,pre { font-family: courier,monospace; font-size: 11px; }
+p { line-height: 1.4; white-space: nowrap; /* by popular demand */ }
+figure { margin: 1em 1.5em; }
+figure img { max-width: 100%; height: auto; }
+figure figcaption,
+figure p { margin: 0.5em 1.5em; font-style: italic; font-family: courier,monospace; font-size: 11px; }
+
+table#opctable, table#opctable td, table#opctable th {
+	border:  #888 1px solid;
+}
+table#opctable td, table#opctable th { padding: 5px; min-width: 4em; }
+table#opctable th {
+	whites-space: nowrap;
+	text-align: center;
+	vertical-align: top;
+	font-style: italic;
+	font-weight: normal;
+	padding: 5px;
+}
+table#opctable tr.lo-nibble th { font-style: normal; }
+table#opctable td.hi-nibble, table#opctable th.hi-nibble { text-align: center; padding: 5px 0; }
+table#opctable .lo-nibble, table#opctable .hi-nibble { color: #222; }
+table#opctable td { background-color: #fbebaf; }
+table#opctable td.hi-nibble,
+table#opctable thead tr.lo-nibble th:first-child { background-color: #a6d4df; }
+table#opctable .lo-nibble { background-color: #a7d99b; }
+table#opctable thead tr:first-child { background-color: #ebd1be; }
+table#opctable td, table#addressmodes td { white-space: nowrap; vertical-align: top; }
+table#opctable td.undef { text-align: center; color: #fcf0c3; cursor: default; background-color: #fcf0c3; }
+table#opctable td.clickable { cursor: pointer; }
+table#opctable td.clickable:hover,
+table#opctable td.clickable:focus { background-color: royalblue; color: white; }
+table#opctable td.clickable:active { background-color: red; color: white; }
+
+table#opclist a:link, table#opclist a:visited { color: #009; }
+table#addressmodes td, table#opclist td, table#register td, table#flags td { padding: 3px;  border: none; border-width: 0; }
+table#addressmodes td.semantics { font-style: italic; } 
+
+div.instrlayout-wrapper {
+	display: table;
+	border: #888 1px dotted;
+	padding: 7px 3px 3px 3px;
+	margin: 1.75em 0;
+}
+table.instrlayout { margin: 0; }
+table.instrlayout td { border-left: #fff 2px solid; border-right: #fff 2px solid; border-top: #fff 1px solid; border-bottom: #fff 1px solid; }
+table.instrlayout tr.g-first td:first-child,
+table.instrlayout tr.g-last td { border-bottom: #fff 2px solid; }
+table.instrlayout tr.g-first td:first-child,
+table.instrlayout tr.g-first td { border-top: #fff 2px solid; }
+table.instrlayout tr.t-half-top td:first-child,
+table.instrlayout tr.t-half-top td { border-bottom: #fff 4px solid; }
+table.instrlayout tr.t-half-bottom td:first-child,
+table.instrlayout tr.t-half-bottom td { border-top: #fff 4px solid; }
+table.instrlayout td { padding: 7px 5px; }
+table.instrlayout th {
+	whites-space: nowrap;
+	text-align: center;
+	vertical-align: bottom;
+	font-style: italic;
+	font-weight: normal;
+	padding: 0 5px 5px 5px;
+}
+table.instrlayout tr.bn th { font-style: normal; font-weight: bold; }
+table.instrlayout span.opc { color: rgba(0,0,0, 0.6); margin-right: 1.25em; }
+table.instrlayout td.a-b { width: 6em; text-align: center; font-weight: bold; }
+table.instrlayout tr.r-even td.a { background-color: #8bcd7b; }
+table.instrlayout tr.r-odd td.a { background-color: #a7d99b; }
+table.instrlayout tr.r-even td.b { background-color: #d7a580; }
+table.instrlayout tr.r-odd td.b { background-color: #e0bb9e; }
+table.instrlayout td.c { width: 5em; text-align: center; font-weight: bold; }
+table.instrlayout td.c0 { background-color: #6ab7c9; }
+table.instrlayout td.c1 { background-color: #88c5d4; }
+table.instrlayout td.c2 { background-color: #a6d4df; }
+table.instrlayout td.c3 { background-color: #cae5ec; }
+table.instrlayout td.v0,
+table.instrlayout td.v1,
+table.instrlayout td.v2,
+table.instrlayout td.v3,
+table.instrlayout td.v4,
+table.instrlayout td.v5,
+table.instrlayout td.v6,
+table.instrlayout td.v7 { min-width: 8.5em; }
+table.instrlayout tr.r0 td.v0,
+table.instrlayout tr.r0 td.v2,
+table.instrlayout tr.r0 td.v4,
+table.instrlayout tr.r0 td.v6 { background-color: #f7d866; }
+table.instrlayout tr.r1 td.v0,
+table.instrlayout tr.r1 td.v2,
+table.instrlayout tr.r1 td.v4,
+table.instrlayout tr.r1 td.v6 { background-color: #f9e085; }
+table.instrlayout tr.r2 td.v0,
+table.instrlayout tr.r2 td.v2,
+table.instrlayout tr.r2 td.v4,
+table.instrlayout tr.r2 td.v6 { background-color: #fae8a3; }
+table.instrlayout tr.r0 td.v1,
+table.instrlayout tr.r0 td.v3,
+table.instrlayout tr.r0 td.v5,
+table.instrlayout tr.r0 td.v7 { background-color: #fae69b; }
+table.instrlayout tr.r1 td.v1,
+table.instrlayout tr.r1 td.v3,
+table.instrlayout tr.r1 td.v5,
+table.instrlayout tr.r1 td.v7 { background-color: #fbebaf; }
+table.instrlayout tr.r2 td.v1,
+table.instrlayout tr.r2 td.v3,
+table.instrlayout tr.r2 td.v5,
+table.instrlayout tr.r2 td.v7 { background-color: #fcf0c3; }
+table.instrlayout th span.bitwidth { color: #777; margin-left: -0.2em; margin-right: -2.2em; cursor: default; }
+
+div.explanation { margin: 0 0 2em 0; }
+div.explanation p, p.explanation { font-size: 12px; }
+
+#instrOverlay
+{
+	display: block;
+	position: absolute;
+	background-color: rgba(128,128,128, 0.9);
+	color: #fff;
+	box-shadow: 0 2px 4px rgba(0,0,10,0.3);
+	font-family: sans-serif;
+	font-size: 12px;
+	line-height: 16px;
+	white-space: pre;
+	letter-spacing: 0.03em;
+	margin: 0;
+	padding: 4px 8px;
+	border-radius: 5px;
+	pointer-events: none;
+	min-width: 120px;
+	z-index: 2;
+}
+#instrOverlay:before
+{
+	content: '';
+	position: absolute;
+	top: -5px;
+	left: 12px;
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 0 4px 5px 4px;
+	border-color: transparent transparent rgba(128,128,128, 0.9); transparent;
+}
+
+@page { size:landscape; }
+</style>
+</head>
+<body>
+<h1>6502 Instruction Set</h1>
+
+<table id="opctable" aria-label="table of instruction codes">
+<thead>
+<tr>
+<th class="hi-nibble" aria-label="first column: high-nibble of byte (hexadecimal)">HI</th><th colspan="16" aria-label="columns 1 - 15: low nibble (hexadecimal)">LO-NIBBLE</th>
+</tr>
+<tr class="lo-nibble">
+<th>&nbsp;</th><th>00</th><th>01</th><th>02</th><th>03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th><th>09</th><th>0A</th><th>0B</th><th>0C</th><th>0D</th><th>0E</th><th>0F</th></tr>
+</thead>
+<tbody>
+<tr>
+<td class="hi-nibble">00</td><td data-description="$ 00
+Instr.: Break / interrupt
+Addr.: implied" aria-label="$ 00
+Instr.: Break / interrupt
+Addr.: implied" data-opc="BRK" class="clickable">BRK impl</td><td data-description="$ 01
+Instr.: Or with accumulator
+Addr.: X-indexed, indirect" aria-label="$ 01
+Instr.: Or with accumulator
+Addr.: X-indexed, indirect" data-opc="ORA" class="clickable">ORA X,ind</td><td class="undef" data-description="$ 02">---</td><td class="undef" data-description="$ 03">---</td><td class="undef" data-description="$ 04">---</td><td data-description="$ 05
+Instr.: Or with accumulator
+Addr.: zero-page" aria-label="$ 05
+Instr.: Or with accumulator
+Addr.: zero-page" data-opc="ORA" class="clickable">ORA zpg</td><td data-description="$ 06
+Instr.: Arithmetic shift left
+Addr.: zero-page" aria-label="$ 06
+Instr.: Arithmetic shift left
+Addr.: zero-page" data-opc="ASL" class="clickable">ASL zpg</td><td class="undef" data-description="$ 07">---</td><td data-description="$ 08
+Instr.: Push processor status onto stack
+Addr.: implied" aria-label="$ 08
+Instr.: Push processor status onto stack
+Addr.: implied" data-opc="PHP" class="clickable">PHP impl</td><td data-description="$ 09
+Instr.: Or with accumulator
+Addr.: immediate" aria-label="$ 09
+Instr.: Or with accumulator
+Addr.: immediate" data-opc="ORA" class="clickable">ORA #</td><td data-description="$ 0A
+Instr.: Arithmetic shift left
+Addr.: accumulator (implied)" aria-label="$ 0A
+Instr.: Arithmetic shift left
+Addr.: accumulator (implied)" data-opc="ASL" class="clickable">ASL A</td><td class="undef" data-description="$ 0B">---</td><td class="undef" data-description="$ 0C">---</td><td data-description="$ 0D
+Instr.: Or with accumulator
+Addr.: absolute" aria-label="$ 0D
+Instr.: Or with accumulator
+Addr.: absolute" data-opc="ORA" class="clickable">ORA abs</td><td data-description="$ 0E
+Instr.: Arithmetic shift left
+Addr.: absolute" aria-label="$ 0E
+Instr.: Arithmetic shift left
+Addr.: absolute" data-opc="ASL" class="clickable">ASL abs</td><td class="undef" data-description="$ 0F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">10</td><td data-description="$ 10
+Instr.: Branch on plus
+Addr.: relative" aria-label="$ 10
+Instr.: Branch on plus
+Addr.: relative" data-opc="BPL" class="clickable">BPL rel</td><td data-description="$ 11
+Instr.: Or with accumulator
+Addr.: indirect, Y-indexed" aria-label="$ 11
+Instr.: Or with accumulator
+Addr.: indirect, Y-indexed" data-opc="ORA" class="clickable">ORA ind,Y</td><td class="undef" data-description="$ 12">---</td><td class="undef" data-description="$ 13">---</td><td class="undef" data-description="$ 14">---</td><td data-description="$ 15
+Instr.: Or with accumulator
+Addr.: zero-page, X-indexed" aria-label="$ 15
+Instr.: Or with accumulator
+Addr.: zero-page, X-indexed" data-opc="ORA" class="clickable">ORA zpg,X</td><td data-description="$ 16
+Instr.: Arithmetic shift left
+Addr.: zero-page, X-indexed" aria-label="$ 16
+Instr.: Arithmetic shift left
+Addr.: zero-page, X-indexed" data-opc="ASL" class="clickable">ASL zpg,X</td><td class="undef" data-description="$ 17">---</td><td data-description="$ 18
+Instr.: Clear carry
+Addr.: implied" aria-label="$ 18
+Instr.: Clear carry
+Addr.: implied" data-opc="CLC" class="clickable">CLC impl</td><td data-description="$ 19
+Instr.: Or with accumulator
+Addr.: absolute, Y-indexed" aria-label="$ 19
+Instr.: Or with accumulator
+Addr.: absolute, Y-indexed" data-opc="ORA" class="clickable">ORA abs,Y</td><td class="undef" data-description="$ 1A">---</td><td class="undef" data-description="$ 1B">---</td><td class="undef" data-description="$ 1C">---</td><td data-description="$ 1D
+Instr.: Or with accumulator
+Addr.: absolute, X-indexed" aria-label="$ 1D
+Instr.: Or with accumulator
+Addr.: absolute, X-indexed" data-opc="ORA" class="clickable">ORA abs,X</td><td data-description="$ 1E
+Instr.: Arithmetic shift left
+Addr.: absolute, X-indexed" aria-label="$ 1E
+Instr.: Arithmetic shift left
+Addr.: absolute, X-indexed" data-opc="ASL" class="clickable">ASL abs,X</td><td class="undef" data-description="$ 1F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">20</td><td data-description="$ 20
+Instr.: Jump subroutine
+Addr.: absolute" aria-label="$ 20
+Instr.: Jump subroutine
+Addr.: absolute" data-opc="JSR" class="clickable">JSR abs</td><td data-description="$ 21
+Instr.: And
+Addr.: X-indexed, indirect" aria-label="$ 21
+Instr.: And
+Addr.: X-indexed, indirect" data-opc="AND" class="clickable">AND X,ind</td><td class="undef" data-description="$ 22">---</td><td class="undef" data-description="$ 23">---</td><td data-description="$ 24
+Instr.: Bit test
+Addr.: zero-page" aria-label="$ 24
+Instr.: Bit test
+Addr.: zero-page" data-opc="BIT" class="clickable">BIT zpg</td><td data-description="$ 25
+Instr.: And
+Addr.: zero-page" aria-label="$ 25
+Instr.: And
+Addr.: zero-page" data-opc="AND" class="clickable">AND zpg</td><td data-description="$ 26
+Instr.: Rotate left
+Addr.: zero-page" aria-label="$ 26
+Instr.: Rotate left
+Addr.: zero-page" data-opc="ROL" class="clickable">ROL zpg</td><td class="undef" data-description="$ 27">---</td><td data-description="$ 28
+Instr.: Pull processor status from stack
+Addr.: implied" aria-label="$ 28
+Instr.: Pull processor status from stack
+Addr.: implied" data-opc="PLP" class="clickable">PLP impl</td><td data-description="$ 29
+Instr.: And
+Addr.: immediate" aria-label="$ 29
+Instr.: And
+Addr.: immediate" data-opc="AND" class="clickable">AND #</td><td data-description="$ 2A
+Instr.: Rotate left
+Addr.: accumulator (implied)" aria-label="$ 2A
+Instr.: Rotate left
+Addr.: accumulator (implied)" data-opc="ROL" class="clickable">ROL A</td><td class="undef" data-description="$ 2B">---</td><td data-description="$ 2C
+Instr.: Bit test
+Addr.: absolute" aria-label="$ 2C
+Instr.: Bit test
+Addr.: absolute" data-opc="BIT" class="clickable">BIT abs</td><td data-description="$ 2D
+Instr.: And
+Addr.: absolute" aria-label="$ 2D
+Instr.: And
+Addr.: absolute" data-opc="AND" class="clickable">AND abs</td><td data-description="$ 2E
+Instr.: Rotate left
+Addr.: absolute" aria-label="$ 2E
+Instr.: Rotate left
+Addr.: absolute" data-opc="ROL" class="clickable">ROL abs</td><td class="undef" data-description="$ 2F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">30</td><td data-description="$ 30
+Instr.: Branch on minus
+Addr.: relative" aria-label="$ 30
+Instr.: Branch on minus
+Addr.: relative" data-opc="BMI" class="clickable">BMI rel</td><td data-description="$ 31
+Instr.: And
+Addr.: indirect, Y-indexed" aria-label="$ 31
+Instr.: And
+Addr.: indirect, Y-indexed" data-opc="AND" class="clickable">AND ind,Y</td><td class="undef" data-description="$ 32">---</td><td class="undef" data-description="$ 33">---</td><td class="undef" data-description="$ 34">---</td><td data-description="$ 35
+Instr.: And
+Addr.: zero-page, X-indexed" aria-label="$ 35
+Instr.: And
+Addr.: zero-page, X-indexed" data-opc="AND" class="clickable">AND zpg,X</td><td data-description="$ 36
+Instr.: Rotate left
+Addr.: zero-page, X-indexed" aria-label="$ 36
+Instr.: Rotate left
+Addr.: zero-page, X-indexed" data-opc="ROL" class="clickable">ROL zpg,X</td><td class="undef" data-description="$ 37">---</td><td data-description="$ 38
+Instr.: Set carry
+Addr.: implied" aria-label="$ 38
+Instr.: Set carry
+Addr.: implied" data-opc="SEC" class="clickable">SEC impl</td><td data-description="$ 39
+Instr.: And
+Addr.: absolute, Y-indexed" aria-label="$ 39
+Instr.: And
+Addr.: absolute, Y-indexed" data-opc="AND" class="clickable">AND abs,Y</td><td class="undef" data-description="$ 3A">---</td><td class="undef" data-description="$ 3B">---</td><td class="undef" data-description="$ 3C">---</td><td data-description="$ 3D
+Instr.: And
+Addr.: absolute, X-indexed" aria-label="$ 3D
+Instr.: And
+Addr.: absolute, X-indexed" data-opc="AND" class="clickable">AND abs,X</td><td data-description="$ 3E
+Instr.: Rotate left
+Addr.: absolute, X-indexed" aria-label="$ 3E
+Instr.: Rotate left
+Addr.: absolute, X-indexed" data-opc="ROL" class="clickable">ROL abs,X</td><td class="undef" data-description="$ 3F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">40</td><td data-description="$ 40
+Instr.: Return from interrupt
+Addr.: implied" aria-label="$ 40
+Instr.: Return from interrupt
+Addr.: implied" data-opc="RTI" class="clickable">RTI impl</td><td data-description="$ 41
+Instr.: Exclusive or
+Addr.: X-indexed, indirect" aria-label="$ 41
+Instr.: Exclusive or
+Addr.: X-indexed, indirect" data-opc="EOR" class="clickable">EOR X,ind</td><td class="undef" data-description="$ 42">---</td><td class="undef" data-description="$ 43">---</td><td class="undef" data-description="$ 44">---</td><td data-description="$ 45
+Instr.: Exclusive or
+Addr.: zero-page" aria-label="$ 45
+Instr.: Exclusive or
+Addr.: zero-page" data-opc="EOR" class="clickable">EOR zpg</td><td data-description="$ 46
+Instr.: Logical shift right
+Addr.: zero-page" aria-label="$ 46
+Instr.: Logical shift right
+Addr.: zero-page" data-opc="LSR" class="clickable">LSR zpg</td><td class="undef" data-description="$ 47">---</td><td data-description="$ 48
+Instr.: Push accumulator onto stack
+Addr.: implied" aria-label="$ 48
+Instr.: Push accumulator onto stack
+Addr.: implied" data-opc="PHA" class="clickable">PHA impl</td><td data-description="$ 49
+Instr.: Exclusive or
+Addr.: immediate" aria-label="$ 49
+Instr.: Exclusive or
+Addr.: immediate" data-opc="EOR" class="clickable">EOR #</td><td data-description="$ 4A
+Instr.: Logical shift right
+Addr.: accumulator (implied)" aria-label="$ 4A
+Instr.: Logical shift right
+Addr.: accumulator (implied)" data-opc="LSR" class="clickable">LSR A</td><td class="undef" data-description="$ 4B">---</td><td data-description="$ 4C
+Instr.: Jump
+Addr.: absolute" aria-label="$ 4C
+Instr.: Jump
+Addr.: absolute" data-opc="JMP" class="clickable">JMP abs</td><td data-description="$ 4D
+Instr.: Exclusive or
+Addr.: absolute" aria-label="$ 4D
+Instr.: Exclusive or
+Addr.: absolute" data-opc="EOR" class="clickable">EOR abs</td><td data-description="$ 4E
+Instr.: Logical shift right
+Addr.: absolute" aria-label="$ 4E
+Instr.: Logical shift right
+Addr.: absolute" data-opc="LSR" class="clickable">LSR abs</td><td class="undef" data-description="$ 4F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">50</td><td data-description="$ 50
+Instr.: Branch on overflow clear
+Addr.: relative" aria-label="$ 50
+Instr.: Branch on overflow clear
+Addr.: relative" data-opc="BVC" class="clickable">BVC rel</td><td data-description="$ 51
+Instr.: Exclusive or
+Addr.: indirect, Y-indexed" aria-label="$ 51
+Instr.: Exclusive or
+Addr.: indirect, Y-indexed" data-opc="EOR" class="clickable">EOR ind,Y</td><td class="undef" data-description="$ 52">---</td><td class="undef" data-description="$ 53">---</td><td class="undef" data-description="$ 54">---</td><td data-description="$ 55
+Instr.: Exclusive or
+Addr.: zero-page, X-indexed" aria-label="$ 55
+Instr.: Exclusive or
+Addr.: zero-page, X-indexed" data-opc="EOR" class="clickable">EOR zpg,X</td><td data-description="$ 56
+Instr.: Logical shift right
+Addr.: zero-page, X-indexed" aria-label="$ 56
+Instr.: Logical shift right
+Addr.: zero-page, X-indexed" data-opc="LSR" class="clickable">LSR zpg,X</td><td class="undef" data-description="$ 57">---</td><td data-description="$ 58
+Instr.: Clear interrupt disable
+Addr.: implied" aria-label="$ 58
+Instr.: Clear interrupt disable
+Addr.: implied" data-opc="CLI" class="clickable">CLI impl</td><td data-description="$ 59
+Instr.: Exclusive or
+Addr.: absolute, Y-indexed" aria-label="$ 59
+Instr.: Exclusive or
+Addr.: absolute, Y-indexed" data-opc="EOR" class="clickable">EOR abs,Y</td><td class="undef" data-description="$ 5A">---</td><td class="undef" data-description="$ 5B">---</td><td class="undef" data-description="$ 5C">---</td><td data-description="$ 5D
+Instr.: Exclusive or
+Addr.: absolute, X-indexed" aria-label="$ 5D
+Instr.: Exclusive or
+Addr.: absolute, X-indexed" data-opc="EOR" class="clickable">EOR abs,X</td><td data-description="$ 5E
+Instr.: Logical shift right
+Addr.: absolute, X-indexed" aria-label="$ 5E
+Instr.: Logical shift right
+Addr.: absolute, X-indexed" data-opc="LSR" class="clickable">LSR abs,X</td><td class="undef" data-description="$ 5F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">60</td><td data-description="$ 60
+Instr.: Return from subroutine
+Addr.: implied" aria-label="$ 60
+Instr.: Return from subroutine
+Addr.: implied" data-opc="RTS" class="clickable">RTS impl</td><td data-description="$ 61
+Instr.: Add with carry
+Addr.: X-indexed, indirect" aria-label="$ 61
+Instr.: Add with carry
+Addr.: X-indexed, indirect" data-opc="ADC" class="clickable">ADC X,ind</td><td class="undef" data-description="$ 62">---</td><td class="undef" data-description="$ 63">---</td><td class="undef" data-description="$ 64">---</td><td data-description="$ 65
+Instr.: Add with carry
+Addr.: zero-page" aria-label="$ 65
+Instr.: Add with carry
+Addr.: zero-page" data-opc="ADC" class="clickable">ADC zpg</td><td data-description="$ 66
+Instr.: Rotate right
+Addr.: zero-page" aria-label="$ 66
+Instr.: Rotate right
+Addr.: zero-page" data-opc="ROR" class="clickable">ROR zpg</td><td class="undef" data-description="$ 67">---</td><td data-description="$ 68
+Instr.: Pull accumulator from stack
+Addr.: implied" aria-label="$ 68
+Instr.: Pull accumulator from stack
+Addr.: implied" data-opc="PLA" class="clickable">PLA impl</td><td data-description="$ 69
+Instr.: Add with carry
+Addr.: immediate" aria-label="$ 69
+Instr.: Add with carry
+Addr.: immediate" data-opc="ADC" class="clickable">ADC #</td><td data-description="$ 6A
+Instr.: Rotate right
+Addr.: accumulator (implied)" aria-label="$ 6A
+Instr.: Rotate right
+Addr.: accumulator (implied)" data-opc="ROR" class="clickable">ROR A</td><td class="undef" data-description="$ 6B">---</td><td data-description="$ 6C
+Instr.: Jump
+Addr.: indirect" aria-label="$ 6C
+Instr.: Jump
+Addr.: indirect" data-opc="JMP" class="clickable">JMP ind</td><td data-description="$ 6D
+Instr.: Add with carry
+Addr.: absolute" aria-label="$ 6D
+Instr.: Add with carry
+Addr.: absolute" data-opc="ADC" class="clickable">ADC abs</td><td data-description="$ 6E
+Instr.: Rotate right
+Addr.: absolute" aria-label="$ 6E
+Instr.: Rotate right
+Addr.: absolute" data-opc="ROR" class="clickable">ROR abs</td><td class="undef" data-description="$ 6F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">70</td><td data-description="$ 70
+Instr.: Branch on overflow set
+Addr.: relative" aria-label="$ 70
+Instr.: Branch on overflow set
+Addr.: relative" data-opc="BVS" class="clickable">BVS rel</td><td data-description="$ 71
+Instr.: Add with carry
+Addr.: indirect, Y-indexed" aria-label="$ 71
+Instr.: Add with carry
+Addr.: indirect, Y-indexed" data-opc="ADC" class="clickable">ADC ind,Y</td><td class="undef" data-description="$ 72">---</td><td class="undef" data-description="$ 73">---</td><td class="undef" data-description="$ 74">---</td><td data-description="$ 75
+Instr.: Add with carry
+Addr.: zero-page, X-indexed" aria-label="$ 75
+Instr.: Add with carry
+Addr.: zero-page, X-indexed" data-opc="ADC" class="clickable">ADC zpg,X</td><td data-description="$ 76
+Instr.: Rotate right
+Addr.: zero-page, X-indexed" aria-label="$ 76
+Instr.: Rotate right
+Addr.: zero-page, X-indexed" data-opc="ROR" class="clickable">ROR zpg,X</td><td class="undef" data-description="$ 77">---</td><td data-description="$ 78
+Instr.: Set interrupt disable
+Addr.: implied" aria-label="$ 78
+Instr.: Set interrupt disable
+Addr.: implied" data-opc="SEI" class="clickable">SEI impl</td><td data-description="$ 79
+Instr.: Add with carry
+Addr.: absolute, Y-indexed" aria-label="$ 79
+Instr.: Add with carry
+Addr.: absolute, Y-indexed" data-opc="ADC" class="clickable">ADC abs,Y</td><td class="undef" data-description="$ 7A">---</td><td class="undef" data-description="$ 7B">---</td><td class="undef" data-description="$ 7C">---</td><td data-description="$ 7D
+Instr.: Add with carry
+Addr.: absolute, X-indexed" aria-label="$ 7D
+Instr.: Add with carry
+Addr.: absolute, X-indexed" data-opc="ADC" class="clickable">ADC abs,X</td><td data-description="$ 7E
+Instr.: Rotate right
+Addr.: absolute, X-indexed" aria-label="$ 7E
+Instr.: Rotate right
+Addr.: absolute, X-indexed" data-opc="ROR" class="clickable">ROR abs,X</td><td class="undef" data-description="$ 7F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">80</td><td class="undef" data-description="$ 80">---</td><td data-description="$ 81
+Instr.: Store accumulator
+Addr.: X-indexed, indirect" aria-label="$ 81
+Instr.: Store accumulator
+Addr.: X-indexed, indirect" data-opc="STA" class="clickable">STA X,ind</td><td class="undef" data-description="$ 82">---</td><td class="undef" data-description="$ 83">---</td><td data-description="$ 84
+Instr.: Store Y
+Addr.: zero-page" aria-label="$ 84
+Instr.: Store Y
+Addr.: zero-page" data-opc="STY" class="clickable">STY zpg</td><td data-description="$ 85
+Instr.: Store accumulator
+Addr.: zero-page" aria-label="$ 85
+Instr.: Store accumulator
+Addr.: zero-page" data-opc="STA" class="clickable">STA zpg</td><td data-description="$ 86
+Instr.: Store X
+Addr.: zero-page" aria-label="$ 86
+Instr.: Store X
+Addr.: zero-page" data-opc="STX" class="clickable">STX zpg</td><td class="undef" data-description="$ 87">---</td><td data-description="$ 88
+Instr.: Decrement Y
+Addr.: implied" aria-label="$ 88
+Instr.: Decrement Y
+Addr.: implied" data-opc="DEY" class="clickable">DEY impl</td><td class="undef" data-description="$ 89">---</td><td data-description="$ 8A
+Instr.: Transfer X to accumulator
+Addr.: implied" aria-label="$ 8A
+Instr.: Transfer X to accumulator
+Addr.: implied" data-opc="TXA" class="clickable">TXA impl</td><td class="undef" data-description="$ 8B">---</td><td data-description="$ 8C
+Instr.: Store Y
+Addr.: absolute" aria-label="$ 8C
+Instr.: Store Y
+Addr.: absolute" data-opc="STY" class="clickable">STY abs</td><td data-description="$ 8D
+Instr.: Store accumulator
+Addr.: absolute" aria-label="$ 8D
+Instr.: Store accumulator
+Addr.: absolute" data-opc="STA" class="clickable">STA abs</td><td data-description="$ 8E
+Instr.: Store X
+Addr.: absolute" aria-label="$ 8E
+Instr.: Store X
+Addr.: absolute" data-opc="STX" class="clickable">STX abs</td><td class="undef" data-description="$ 8F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">90</td><td data-description="$ 90
+Instr.: Branch on carry clear
+Addr.: relative" aria-label="$ 90
+Instr.: Branch on carry clear
+Addr.: relative" data-opc="BCC" class="clickable">BCC rel</td><td data-description="$ 91
+Instr.: Store accumulator
+Addr.: indirect, Y-indexed" aria-label="$ 91
+Instr.: Store accumulator
+Addr.: indirect, Y-indexed" data-opc="STA" class="clickable">STA ind,Y</td><td class="undef" data-description="$ 92">---</td><td class="undef" data-description="$ 93">---</td><td data-description="$ 94
+Instr.: Store Y
+Addr.: zero-page, X-indexed" aria-label="$ 94
+Instr.: Store Y
+Addr.: zero-page, X-indexed" data-opc="STY" class="clickable">STY zpg,X</td><td data-description="$ 95
+Instr.: Store accumulator
+Addr.: zero-page, X-indexed" aria-label="$ 95
+Instr.: Store accumulator
+Addr.: zero-page, X-indexed" data-opc="STA" class="clickable">STA zpg,X</td><td data-description="$ 96
+Instr.: Store X
+Addr.: zero-page, Y-indexed" aria-label="$ 96
+Instr.: Store X
+Addr.: zero-page, Y-indexed" data-opc="STX" class="clickable">STX zpg,Y</td><td class="undef" data-description="$ 97">---</td><td data-description="$ 98
+Instr.: Transfer Y to accumulator
+Addr.: implied" aria-label="$ 98
+Instr.: Transfer Y to accumulator
+Addr.: implied" data-opc="TYA" class="clickable">TYA impl</td><td data-description="$ 99
+Instr.: Store accumulator
+Addr.: absolute, Y-indexed" aria-label="$ 99
+Instr.: Store accumulator
+Addr.: absolute, Y-indexed" data-opc="STA" class="clickable">STA abs,Y</td><td data-description="$ 9A
+Instr.: Transfer X to stack pointer
+Addr.: implied" aria-label="$ 9A
+Instr.: Transfer X to stack pointer
+Addr.: implied" data-opc="TXS" class="clickable">TXS impl</td><td class="undef" data-description="$ 9B">---</td><td class="undef" data-description="$ 9C">---</td><td data-description="$ 9D
+Instr.: Store accumulator
+Addr.: absolute, X-indexed" aria-label="$ 9D
+Instr.: Store accumulator
+Addr.: absolute, X-indexed" data-opc="STA" class="clickable">STA abs,X</td><td class="undef" data-description="$ 9E">---</td><td class="undef" data-description="$ 9F">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">A0</td><td data-description="$ A0
+Instr.: Load Y
+Addr.: immediate" aria-label="$ A0
+Instr.: Load Y
+Addr.: immediate" data-opc="LDY" class="clickable">LDY #</td><td data-description="$ A1
+Instr.: Load accumulator
+Addr.: X-indexed, indirect" aria-label="$ A1
+Instr.: Load accumulator
+Addr.: X-indexed, indirect" data-opc="LDA" class="clickable">LDA X,ind</td><td data-description="$ A2
+Instr.: Load X
+Addr.: immediate" aria-label="$ A2
+Instr.: Load X
+Addr.: immediate" data-opc="LDX" class="clickable">LDX #</td><td class="undef" data-description="$ A3">---</td><td data-description="$ A4
+Instr.: Load Y
+Addr.: zero-page" aria-label="$ A4
+Instr.: Load Y
+Addr.: zero-page" data-opc="LDY" class="clickable">LDY zpg</td><td data-description="$ A5
+Instr.: Load accumulator
+Addr.: zero-page" aria-label="$ A5
+Instr.: Load accumulator
+Addr.: zero-page" data-opc="LDA" class="clickable">LDA zpg</td><td data-description="$ A6
+Instr.: Load X
+Addr.: zero-page" aria-label="$ A6
+Instr.: Load X
+Addr.: zero-page" data-opc="LDX" class="clickable">LDX zpg</td><td class="undef" data-description="$ A7">---</td><td data-description="$ A8
+Instr.: Transfer accumulator to Y
+Addr.: implied" aria-label="$ A8
+Instr.: Transfer accumulator to Y
+Addr.: implied" data-opc="TAY" class="clickable">TAY impl</td><td data-description="$ A9
+Instr.: Load accumulator
+Addr.: immediate" aria-label="$ A9
+Instr.: Load accumulator
+Addr.: immediate" data-opc="LDA" class="clickable">LDA #</td><td data-description="$ AA
+Instr.: Transfer accumulator to X
+Addr.: implied" aria-label="$ AA
+Instr.: Transfer accumulator to X
+Addr.: implied" data-opc="TAX" class="clickable">TAX impl</td><td class="undef" data-description="$ AB">---</td><td data-description="$ AC
+Instr.: Load Y
+Addr.: absolute" aria-label="$ AC
+Instr.: Load Y
+Addr.: absolute" data-opc="LDY" class="clickable">LDY abs</td><td data-description="$ AD
+Instr.: Load accumulator
+Addr.: absolute" aria-label="$ AD
+Instr.: Load accumulator
+Addr.: absolute" data-opc="LDA" class="clickable">LDA abs</td><td data-description="$ AE
+Instr.: Load X
+Addr.: absolute" aria-label="$ AE
+Instr.: Load X
+Addr.: absolute" data-opc="LDX" class="clickable">LDX abs</td><td class="undef" data-description="$ AF">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">B0</td><td data-description="$ B0
+Instr.: Branch on carry set
+Addr.: relative" aria-label="$ B0
+Instr.: Branch on carry set
+Addr.: relative" data-opc="BCS" class="clickable">BCS rel</td><td data-description="$ B1
+Instr.: Load accumulator
+Addr.: indirect, Y-indexed" aria-label="$ B1
+Instr.: Load accumulator
+Addr.: indirect, Y-indexed" data-opc="LDA" class="clickable">LDA ind,Y</td><td class="undef" data-description="$ B2">---</td><td class="undef" data-description="$ B3">---</td><td data-description="$ B4
+Instr.: Load Y
+Addr.: zero-page, X-indexed" aria-label="$ B4
+Instr.: Load Y
+Addr.: zero-page, X-indexed" data-opc="LDY" class="clickable">LDY zpg,X</td><td data-description="$ B5
+Instr.: Load accumulator
+Addr.: zero-page, X-indexed" aria-label="$ B5
+Instr.: Load accumulator
+Addr.: zero-page, X-indexed" data-opc="LDA" class="clickable">LDA zpg,X</td><td data-description="$ B6
+Instr.: Load X
+Addr.: zero-page, Y-indexed" aria-label="$ B6
+Instr.: Load X
+Addr.: zero-page, Y-indexed" data-opc="LDX" class="clickable">LDX zpg,Y</td><td class="undef" data-description="$ B7">---</td><td data-description="$ B8
+Instr.: Clear overflow
+Addr.: implied" aria-label="$ B8
+Instr.: Clear overflow
+Addr.: implied" data-opc="CLV" class="clickable">CLV impl</td><td data-description="$ B9
+Instr.: Load accumulator
+Addr.: absolute, Y-indexed" aria-label="$ B9
+Instr.: Load accumulator
+Addr.: absolute, Y-indexed" data-opc="LDA" class="clickable">LDA abs,Y</td><td data-description="$ BA
+Instr.: Transfer stack pointer to X
+Addr.: implied" aria-label="$ BA
+Instr.: Transfer stack pointer to X
+Addr.: implied" data-opc="TSX" class="clickable">TSX impl</td><td class="undef" data-description="$ BB">---</td><td data-description="$ BC
+Instr.: Load Y
+Addr.: absolute, X-indexed" aria-label="$ BC
+Instr.: Load Y
+Addr.: absolute, X-indexed" data-opc="LDY" class="clickable">LDY abs,X</td><td data-description="$ BD
+Instr.: Load accumulator
+Addr.: absolute, X-indexed" aria-label="$ BD
+Instr.: Load accumulator
+Addr.: absolute, X-indexed" data-opc="LDA" class="clickable">LDA abs,X</td><td data-description="$ BE
+Instr.: Load X
+Addr.: absolute, Y-indexed" aria-label="$ BE
+Instr.: Load X
+Addr.: absolute, Y-indexed" data-opc="LDX" class="clickable">LDX abs,Y</td><td class="undef" data-description="$ BF">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">C0</td><td data-description="$ C0
+Instr.: Compare with Y
+Addr.: immediate" aria-label="$ C0
+Instr.: Compare with Y
+Addr.: immediate" data-opc="CPY" class="clickable">CPY #</td><td data-description="$ C1
+Instr.: Compare with accumulator
+Addr.: X-indexed, indirect" aria-label="$ C1
+Instr.: Compare with accumulator
+Addr.: X-indexed, indirect" data-opc="CMP" class="clickable">CMP X,ind</td><td class="undef" data-description="$ C2">---</td><td class="undef" data-description="$ C3">---</td><td data-description="$ C4
+Instr.: Compare with Y
+Addr.: zero-page" aria-label="$ C4
+Instr.: Compare with Y
+Addr.: zero-page" data-opc="CPY" class="clickable">CPY zpg</td><td data-description="$ C5
+Instr.: Compare with accumulator
+Addr.: zero-page" aria-label="$ C5
+Instr.: Compare with accumulator
+Addr.: zero-page" data-opc="CMP" class="clickable">CMP zpg</td><td data-description="$ C6
+Instr.: Decrement
+Addr.: zero-page" aria-label="$ C6
+Instr.: Decrement
+Addr.: zero-page" data-opc="DEC" class="clickable">DEC zpg</td><td class="undef" data-description="$ C7">---</td><td data-description="$ C8
+Instr.: Increment Y
+Addr.: implied" aria-label="$ C8
+Instr.: Increment Y
+Addr.: implied" data-opc="INY" class="clickable">INY impl</td><td data-description="$ C9
+Instr.: Compare with accumulator
+Addr.: immediate" aria-label="$ C9
+Instr.: Compare with accumulator
+Addr.: immediate" data-opc="CMP" class="clickable">CMP #</td><td data-description="$ CA
+Instr.: Decrement X
+Addr.: implied" aria-label="$ CA
+Instr.: Decrement X
+Addr.: implied" data-opc="DEX" class="clickable">DEX impl</td><td class="undef" data-description="$ CB">---</td><td data-description="$ CC
+Instr.: Compare with Y
+Addr.: absolute" aria-label="$ CC
+Instr.: Compare with Y
+Addr.: absolute" data-opc="CPY" class="clickable">CPY abs</td><td data-description="$ CD
+Instr.: Compare with accumulator
+Addr.: absolute" aria-label="$ CD
+Instr.: Compare with accumulator
+Addr.: absolute" data-opc="CMP" class="clickable">CMP abs</td><td data-description="$ CE
+Instr.: Decrement
+Addr.: absolute" aria-label="$ CE
+Instr.: Decrement
+Addr.: absolute" data-opc="DEC" class="clickable">DEC abs</td><td class="undef" data-description="$ CF">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">D0</td><td data-description="$ D0
+Instr.: Branch on not equal
+Addr.: relative" aria-label="$ D0
+Instr.: Branch on not equal
+Addr.: relative" data-opc="BNE" class="clickable">BNE rel</td><td data-description="$ D1
+Instr.: Compare with accumulator
+Addr.: indirect, Y-indexed" aria-label="$ D1
+Instr.: Compare with accumulator
+Addr.: indirect, Y-indexed" data-opc="CMP" class="clickable">CMP ind,Y</td><td class="undef" data-description="$ D2">---</td><td class="undef" data-description="$ D3">---</td><td class="undef" data-description="$ D4">---</td><td data-description="$ D5
+Instr.: Compare with accumulator
+Addr.: zero-page, X-indexed" aria-label="$ D5
+Instr.: Compare with accumulator
+Addr.: zero-page, X-indexed" data-opc="CMP" class="clickable">CMP zpg,X</td><td data-description="$ D6
+Instr.: Decrement
+Addr.: zero-page, X-indexed" aria-label="$ D6
+Instr.: Decrement
+Addr.: zero-page, X-indexed" data-opc="DEC" class="clickable">DEC zpg,X</td><td class="undef" data-description="$ D7">---</td><td data-description="$ D8
+Instr.: Clear decimal
+Addr.: implied" aria-label="$ D8
+Instr.: Clear decimal
+Addr.: implied" data-opc="CLD" class="clickable">CLD impl</td><td data-description="$ D9
+Instr.: Compare with accumulator
+Addr.: absolute, Y-indexed" aria-label="$ D9
+Instr.: Compare with accumulator
+Addr.: absolute, Y-indexed" data-opc="CMP" class="clickable">CMP abs,Y</td><td class="undef" data-description="$ DA">---</td><td class="undef" data-description="$ DB">---</td><td class="undef" data-description="$ DC">---</td><td data-description="$ DD
+Instr.: Compare with accumulator
+Addr.: absolute, X-indexed" aria-label="$ DD
+Instr.: Compare with accumulator
+Addr.: absolute, X-indexed" data-opc="CMP" class="clickable">CMP abs,X</td><td data-description="$ DE
+Instr.: Decrement
+Addr.: absolute, X-indexed" aria-label="$ DE
+Instr.: Decrement
+Addr.: absolute, X-indexed" data-opc="DEC" class="clickable">DEC abs,X</td><td class="undef" data-description="$ DF">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">E0</td><td data-description="$ E0
+Instr.: Compare with X
+Addr.: immediate" aria-label="$ E0
+Instr.: Compare with X
+Addr.: immediate" data-opc="CPX" class="clickable">CPX #</td><td data-description="$ E1
+Instr.: Subtract with carry
+Addr.: X-indexed, indirect" aria-label="$ E1
+Instr.: Subtract with carry
+Addr.: X-indexed, indirect" data-opc="SBC" class="clickable">SBC X,ind</td><td class="undef" data-description="$ E2">---</td><td class="undef" data-description="$ E3">---</td><td data-description="$ E4
+Instr.: Compare with X
+Addr.: zero-page" aria-label="$ E4
+Instr.: Compare with X
+Addr.: zero-page" data-opc="CPX" class="clickable">CPX zpg</td><td data-description="$ E5
+Instr.: Subtract with carry
+Addr.: zero-page" aria-label="$ E5
+Instr.: Subtract with carry
+Addr.: zero-page" data-opc="SBC" class="clickable">SBC zpg</td><td data-description="$ E6
+Instr.: Increment
+Addr.: zero-page" aria-label="$ E6
+Instr.: Increment
+Addr.: zero-page" data-opc="INC" class="clickable">INC zpg</td><td class="undef" data-description="$ E7">---</td><td data-description="$ E8
+Instr.: Increment X
+Addr.: implied" aria-label="$ E8
+Instr.: Increment X
+Addr.: implied" data-opc="INX" class="clickable">INX impl</td><td data-description="$ E9
+Instr.: Subtract with carry
+Addr.: immediate" aria-label="$ E9
+Instr.: Subtract with carry
+Addr.: immediate" data-opc="SBC" class="clickable">SBC #</td><td data-description="$ EA
+Instr.: No operation
+Addr.: implied" aria-label="$ EA
+Instr.: No operation
+Addr.: implied" data-opc="NOP" class="clickable">NOP impl</td><td class="undef" data-description="$ EB">---</td><td data-description="$ EC
+Instr.: Compare with X
+Addr.: absolute" aria-label="$ EC
+Instr.: Compare with X
+Addr.: absolute" data-opc="CPX" class="clickable">CPX abs</td><td data-description="$ ED
+Instr.: Subtract with carry
+Addr.: absolute" aria-label="$ ED
+Instr.: Subtract with carry
+Addr.: absolute" data-opc="SBC" class="clickable">SBC abs</td><td data-description="$ EE
+Instr.: Increment
+Addr.: absolute" aria-label="$ EE
+Instr.: Increment
+Addr.: absolute" data-opc="INC" class="clickable">INC abs</td><td class="undef" data-description="$ EF">---</td>
+</tr>
+<tr>
+<td class="hi-nibble">F0</td><td data-description="$ F0
+Instr.: Branch on equal
+Addr.: relative" aria-label="$ F0
+Instr.: Branch on equal
+Addr.: relative" data-opc="BEQ" class="clickable">BEQ rel</td><td data-description="$ F1
+Instr.: Subtract with carry
+Addr.: indirect, Y-indexed" aria-label="$ F1
+Instr.: Subtract with carry
+Addr.: indirect, Y-indexed" data-opc="SBC" class="clickable">SBC ind,Y</td><td class="undef" data-description="$ F2">---</td><td class="undef" data-description="$ F3">---</td><td class="undef" data-description="$ F4">---</td><td data-description="$ F5
+Instr.: Subtract with carry
+Addr.: zero-page, X-indexed" aria-label="$ F5
+Instr.: Subtract with carry
+Addr.: zero-page, X-indexed" data-opc="SBC" class="clickable">SBC zpg,X</td><td data-description="$ F6
+Instr.: Increment
+Addr.: zero-page, X-indexed" aria-label="$ F6
+Instr.: Increment
+Addr.: zero-page, X-indexed" data-opc="INC" class="clickable">INC zpg,X</td><td class="undef" data-description="$ F7">---</td><td data-description="$ F8
+Instr.: Set decimal
+Addr.: implied" aria-label="$ F8
+Instr.: Set decimal
+Addr.: implied" data-opc="SED" class="clickable">SED impl</td><td data-description="$ F9
+Instr.: Subtract with carry
+Addr.: absolute, Y-indexed" aria-label="$ F9
+Instr.: Subtract with carry
+Addr.: absolute, Y-indexed" data-opc="SBC" class="clickable">SBC abs,Y</td><td class="undef" data-description="$ FA">---</td><td class="undef" data-description="$ FB">---</td><td class="undef" data-description="$ FC">---</td><td data-description="$ FD
+Instr.: Subtract with carry
+Addr.: absolute, X-indexed" aria-label="$ FD
+Instr.: Subtract with carry
+Addr.: absolute, X-indexed" data-opc="SBC" class="clickable">SBC abs,X</td><td data-description="$ FE
+Instr.: Increment
+Addr.: absolute, X-indexed" aria-label="$ FE
+Instr.: Increment
+Addr.: absolute, X-indexed" data-opc="INC" class="clickable">INC abs,X</td><td class="undef" data-description="$ FF">---</td>
+</tr>
+</tbody>
+</table>
+<p>&nbsp;</p>
+<p>Address Modes:</p>
+<table id="addressmodes" aria-label="table of address modes: (1) abbreviated notation, (2) verbous, (3) formal example, (4) semantical annotations">
+<tbody>
+<tr><td>A</td><td></td><td aria-hidden="true">....</td><td>Accumulator</td><td aria-hidden="true">&nbsp;</td><td>OPC A</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is AC (implied single byte instruction)</td></tr>
+<tr><td>abs</td><td></td><td aria-hidden="true">....</td><td>absolute</td><td aria-hidden="true">&nbsp;</td><td>OPC $LLHH</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is address $HHLL *</td></tr>
+<tr><td>abs,X</td><td></td><td aria-hidden="true">....</td><td>absolute, X-indexed</td><td aria-hidden="true">&nbsp;</td><td>OPC $LLHH,X</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is address; effective address is address incremented by X with carry **</td></tr>
+<tr><td>abs,Y</td><td></td><td aria-hidden="true">....</td><td>absolute, Y-indexed</td><td aria-hidden="true">&nbsp;</td><td>OPC $LLHH,Y</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is address; effective address is address incremented by Y with carry **</td></tr>
+<tr><td>#</td><td></td><td aria-hidden="true">....</td><td>immediate</td><td aria-hidden="true">&nbsp;</td><td>OPC #$BB</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is byte BB</td></tr>
+<tr><td>impl</td><td></td><td aria-hidden="true">....</td><td>implied</td><td aria-hidden="true">&nbsp;</td><td>OPC</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand implied</td></tr>
+<tr><td>ind</td><td></td><td aria-hidden="true">....</td><td>indirect</td><td aria-hidden="true">&nbsp;</td><td>OPC ($LLHH)</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is address; effective address is contents of word at address: C.w($HHLL)</td></tr>
+<tr><td>X,ind</td><td></td><td aria-hidden="true">....</td><td>X-indexed, indirect</td><td aria-hidden="true">&nbsp;</td><td>OPC ($LL,X)</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is zeropage address; effective address is word in (LL + X, LL + X + 1), inc. without carry: C.w($00LL + X)</td></tr>
+<tr><td>ind,Y</td><td></td><td aria-hidden="true">....</td><td>indirect, Y-indexed</td><td aria-hidden="true">&nbsp;</td><td>OPC ($LL),Y</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is zeropage address; effective address is word in (LL, LL + 1) incremented by Y with carry: C.w($00LL) + Y</td></tr>
+<tr><td>rel</td><td></td><td aria-hidden="true">....</td><td>relative</td><td aria-hidden="true">&nbsp;</td><td>OPC $BB</td><td aria-hidden="true">&nbsp;</td><td class="semantics">branch target is PC + signed offset BB ***</td></tr>
+<tr><td>zpg</td><td></td><td aria-hidden="true">....</td><td>zeropage</td><td aria-hidden="true">&nbsp;</td><td>OPC $LL</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is zeropage address (hi-byte is zero, address = $00LL)</td></tr>
+<tr><td>zpg,X</td><td></td><td aria-hidden="true">....</td><td>zeropage, X-indexed</td><td aria-hidden="true">&nbsp;</td><td>OPC $LL,X</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is zeropage address; effective address is address incremented by X without carry **</td></tr>
+<tr><td>zpg,Y</td><td></td><td aria-hidden="true">....</td><td>zeropage, Y-indexed</td><td aria-hidden="true">&nbsp;</td><td>OPC $LL,Y</td><td aria-hidden="true">&nbsp;</td><td class="semantics">operand is zeropage address; effective address is address incremented by Y without carry **</td></tr>
+</tbody>
+</table>
+
+<p aria-label="note 1">&nbsp;<br>*&nbsp;&nbsp; 16-bit address words are little endian, lo(w)-byte first, followed by the hi(gh)-byte.<br>
+(An assembler will use a human readable, big-endian notation as in $HHLL.)</p>
+<p aria-label="note 2">**&nbsp; The available 16-bit address space is conceived as consisting of pages of 256 bytes each, with<br>
+address hi-bytes represententing the page index. An increment with carry may affect the hi-byte<br>
+and may thus result in a crossing of page boundaries, adding an extra cycle to the execution.<br>
+Increments without carry do not affect the hi-byte of an address and no page transitions do occur.<br>
+Generally, increments of 16-bit addresses include a carry, increments of zeropage addresses don't.<br>
+Notably this is not related in any way to the state of the carry bit of the accumulator.</p>
+<p aria-label="note 3">*** Branch offsets are signed 8-bit values, -128 ... +127, negative offsets in two's complement.<br>
+Page transitions may occur and add an extra cycle to the exucution.</p>
+
+<p>&nbsp;</p>
+<p>Instructions by Name:</p>
+<table id="opclist" aria-label="table of mnemonics and their verbous equivalent">
+<tbody><tr><td><a href="#ADC" title="instruction details for ADC...">ADC</a></td><td aria-hidden="true">....</td><td>add with carry</td></tr>
+<tr><td><a href="#AND" title="instruction details for AND...">AND</a></td><td aria-hidden="true">....</td><td>and (with accumulator)</td></tr>
+<tr><td><a href="#ASL" title="instruction details for ASL...">ASL</a></td><td aria-hidden="true">....</td><td>arithmetic shift left</td></tr>
+<tr><td><a href="#BCC" title="instruction details for BCC...">BCC</a></td><td aria-hidden="true">....</td><td>branch on carry clear</td></tr>
+<tr><td><a href="#BCS" title="instruction details for BCS...">BCS</a></td><td aria-hidden="true">....</td><td>branch on carry set</td></tr>
+<tr><td><a href="#BEQ" title="instruction details for BEQ...">BEQ</a></td><td aria-hidden="true">....</td><td>branch on equal (zero set)</td></tr>
+<tr><td><a href="#BIT" title="instruction details for BIT...">BIT</a></td><td aria-hidden="true">....</td><td>bit test</td></tr>
+<tr><td><a href="#BMI" title="instruction details for BMI...">BMI</a></td><td aria-hidden="true">....</td><td>branch on minus (negative set)</td></tr>
+<tr><td><a href="#BNE" title="instruction details for BNE...">BNE</a></td><td aria-hidden="true">....</td><td>branch on not equal (zero clear)</td></tr>
+<tr><td><a href="#BPL" title="instruction details for BPL...">BPL</a></td><td aria-hidden="true">....</td><td>branch on plus (negative clear)</td></tr>
+<tr><td><a href="#BRK" title="instruction details for BRK...">BRK</a></td><td aria-hidden="true">....</td><td>break / interrupt</td></tr>
+<tr><td><a href="#BVC" title="instruction details for BVC...">BVC</a></td><td aria-hidden="true">....</td><td>branch on overflow clear</td></tr>
+<tr><td><a href="#BVS" title="instruction details for BVS...">BVS</a></td><td aria-hidden="true">....</td><td>branch on overflow set</td></tr>
+<tr><td><a href="#CLC" title="instruction details for CLC...">CLC</a></td><td aria-hidden="true">....</td><td>clear carry</td></tr>
+<tr><td><a href="#CLD" title="instruction details for CLD...">CLD</a></td><td aria-hidden="true">....</td><td>clear decimal</td></tr>
+<tr><td><a href="#CLI" title="instruction details for CLI...">CLI</a></td><td aria-hidden="true">....</td><td>clear interrupt disable</td></tr>
+<tr><td><a href="#CLV" title="instruction details for CLV...">CLV</a></td><td aria-hidden="true">....</td><td>clear overflow</td></tr>
+<tr><td><a href="#CMP" title="instruction details for CMP...">CMP</a></td><td aria-hidden="true">....</td><td>compare (with accumulator)</td></tr>
+<tr><td><a href="#CPX" title="instruction details for CPX...">CPX</a></td><td aria-hidden="true">....</td><td>compare with X</td></tr>
+<tr><td><a href="#CPY" title="instruction details for CPY...">CPY</a></td><td aria-hidden="true">....</td><td>compare with Y</td></tr>
+<tr><td><a href="#DEC" title="instruction details for DEC...">DEC</a></td><td aria-hidden="true">....</td><td>decrement</td></tr>
+<tr><td><a href="#DEX" title="instruction details for DEX...">DEX</a></td><td aria-hidden="true">....</td><td>decrement X</td></tr>
+<tr><td><a href="#DEY" title="instruction details for DEY...">DEY</a></td><td aria-hidden="true">....</td><td>decrement Y</td></tr>
+<tr><td><a href="#EOR" title="instruction details for EOR...">EOR</a></td><td aria-hidden="true">....</td><td>exclusive or (with accumulator)</td></tr>
+<tr><td><a href="#INC" title="instruction details for INC...">INC</a></td><td aria-hidden="true">....</td><td>increment</td></tr>
+<tr><td><a href="#INX" title="instruction details for INX...">INX</a></td><td aria-hidden="true">....</td><td>increment X</td></tr>
+<tr><td><a href="#INY" title="instruction details for INY...">INY</a></td><td aria-hidden="true">....</td><td>increment Y</td></tr>
+<tr><td><a href="#JMP" title="instruction details for JMP...">JMP</a></td><td aria-hidden="true">....</td><td>jump</td></tr>
+<tr><td><a href="#JSR" title="instruction details for JSR...">JSR</a></td><td aria-hidden="true">....</td><td>jump subroutine</td></tr>
+<tr><td><a href="#LDA" title="instruction details for LDA...">LDA</a></td><td aria-hidden="true">....</td><td>load accumulator</td></tr>
+<tr><td><a href="#LDX" title="instruction details for LDX...">LDX</a></td><td aria-hidden="true">....</td><td>load X</td></tr>
+<tr><td><a href="#LDY" title="instruction details for LDY...">LDY</a></td><td aria-hidden="true">....</td><td>load Y</td></tr>
+<tr><td><a href="#LSR" title="instruction details for LSR...">LSR</a></td><td aria-hidden="true">....</td><td>logical shift right</td></tr>
+<tr><td><a href="#NOP" title="instruction details for NOP...">NOP</a></td><td aria-hidden="true">....</td><td>no operation</td></tr>
+<tr><td><a href="#ORA" title="instruction details for ORA...">ORA</a></td><td aria-hidden="true">....</td><td>or with accumulator</td></tr>
+<tr><td><a href="#PHA" title="instruction details for PHA...">PHA</a></td><td aria-hidden="true">....</td><td>push accumulator</td></tr>
+<tr><td><a href="#PHP" title="instruction details for PHP...">PHP</a></td><td aria-hidden="true">....</td><td>push processor status (SR)</td></tr>
+<tr><td><a href="#PLA" title="instruction details for PLA...">PLA</a></td><td aria-hidden="true">....</td><td>pull accumulator</td></tr>
+<tr><td><a href="#PLP" title="instruction details for PLP...">PLP</a></td><td aria-hidden="true">....</td><td>pull processor status (SR)</td></tr>
+<tr><td><a href="#ROL" title="instruction details for ROL...">ROL</a></td><td aria-hidden="true">....</td><td>rotate left</td></tr>
+<tr><td><a href="#ROR" title="instruction details for ROR...">ROR</a></td><td aria-hidden="true">....</td><td>rotate right</td></tr>
+<tr><td><a href="#RTI" title="instruction details for RTI...">RTI</a></td><td aria-hidden="true">....</td><td>return from interrupt</td></tr>
+<tr><td><a href="#RTS" title="instruction details for RTS...">RTS</a></td><td aria-hidden="true">....</td><td>return from subroutine</td></tr>
+<tr><td><a href="#SBC" title="instruction details for SBC...">SBC</a></td><td aria-hidden="true">....</td><td>subtract with carry</td></tr>
+<tr><td><a href="#SEC" title="instruction details for SEC...">SEC</a></td><td aria-hidden="true">....</td><td>set carry</td></tr>
+<tr><td><a href="#SED" title="instruction details for SED...">SED</a></td><td aria-hidden="true">....</td><td>set decimal</td></tr>
+<tr><td><a href="#SEI" title="instruction details for SEI...">SEI</a></td><td aria-hidden="true">....</td><td>set interrupt disable</td></tr>
+<tr><td><a href="#STA" title="instruction details for STA...">STA</a></td><td aria-hidden="true">....</td><td>store accumulator</td></tr>
+<tr><td><a href="#STX" title="instruction details for STX...">STX</a></td><td aria-hidden="true">....</td><td>store X</td></tr>
+<tr><td><a href="#STY" title="instruction details for STY...">STY</a></td><td aria-hidden="true">....</td><td>store Y</td></tr>
+<tr><td><a href="#TAX" title="instruction details for TAX...">TAX</a></td><td aria-hidden="true">....</td><td>transfer accumulator to X</td></tr>
+<tr><td><a href="#TAY" title="instruction details for TAY...">TAY</a></td><td aria-hidden="true">....</td><td>transfer accumulator to Y</td></tr>
+<tr><td><a href="#TSX" title="instruction details for TSX...">TSX</a></td><td aria-hidden="true">....</td><td>transfer stack pointer to X</td></tr>
+<tr><td><a href="#TXA" title="instruction details for TXA...">TXA</a></td><td aria-hidden="true">....</td><td>transfer X to accumulator</td></tr>
+<tr><td><a href="#TXS" title="instruction details for TXS...">TXS</a></td><td aria-hidden="true">....</td><td>transfer X to stack pointer</td></tr>
+<tr><td><a href="#TYA" title="instruction details for TYA...">TYA</a></td><td aria-hidden="true">....</td><td>transfer Y to accumulator</td></tr>
+</tbody></table>
+<p></p>
+
+<p>&nbsp;</p>
+<p>Registers:</p>
+<table id="registers" aria-label="table of registers and their verbous names">
+<tbody><tr><td>PC</td><td aria-hidden="true">....</td><td>program counter</td><td align="right">(16 bit)</td></tr>
+<tr><td>AC</td><td aria-hidden="true">....</td><td>accumulator</td><td align="right">(8 bit)</td></tr>
+<tr><td>X</td><td aria-hidden="true">....</td><td>X register</td><td align="right">(8 bit)</td></tr>
+<tr><td>Y</td><td aria-hidden="true">....</td><td>Y register</td><td align="right">(8 bit)</td></tr>
+<tr><td>SR</td><td aria-hidden="true">....</td><td>status register [NV-BDIZC]</td><td align="right">(8 bit)</td></tr>
+<tr><td>SP</td><td>....</td><td>stack pointer</td><td align="right">(8 bit)</td></tr>
+</tbody></table>
+
+<p>&nbsp;<br>SR Flags (bit 7 to bit 0):</p>
+<table id="flags" aria-label="table of status register flags and their verbous names">
+<tbody><tr><td>N</td><td aria-hidden="true">....</td><td>Negative</td></tr>
+<tr><td>V</td><td aria-hidden="true">....</td><td>Overflow</td></tr>
+<tr><td>-</td><td aria-hidden="true">....</td><td>ignored</td></tr>
+<tr><td>B</td><td aria-hidden="true">....</td><td>Break</td></tr>
+<tr><td>D</td><td aria-hidden="true">....</td><td>Decimal (use BCD for arithmetics)</td></tr>
+<tr><td>I</td><td aria-hidden="true">....</td><td>Interrupt (IRQ disable)</td></tr>
+<tr><td>Z</td><td aria-hidden="true">....</td><td>Zero</td></tr>
+<tr><td>C</td><td aria-hidden="true">....</td><td>Carry</td></tr>
+</tbody></table>
+
+<p>&nbsp;</p>
+<p>Processor Stack:<br>
+LIFO, top down, 8 bit range, 0x0100 - 0x01FF<br>&nbsp;</p>
+
+<p>Bytes, Words, Addressing:<br>
+8 bit bytes, 16 bit words in lobyte-hibyte representation (Little-Endian).<br>
+16 bit address range, operands follow instruction codes.</p>
+
+<p>Signed values are two's complement, sign in bit 7 (most significant bit).<br>
+(%11111111 = $FF = -1, %10000000 = $80 = -128, %01111111 = $7F = +127)<br>&nbsp;</p>
+
+<p>Vendor:<br>
+MOS Technology, 1975</p>
+
+<figure>
+<img src="./files/MOS_6502AD_4585.jpg" alt="MOS Techology 6502 MPU" title="MOS Techology 6502 MPU" width="400" height="144" style="width: 250px; height: auto;">
+<p>Image: <a href="https://commons.wikimedia.org/wiki/File:MOS_6502AD_4585_top.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>.</p>
+</figure>
+
+<p>&nbsp;</p>
+
+<h2 id="details">APPENDIX A: 6502 Instructions in Detail</h2>
+<pre><span class="opcode" aria-label="opcode" id="ADC">ADC</span>  Add Memory to Accumulator with Carry
+
+     A + M + C -&gt; A, C                N Z C I D V
+                                      + + + - - +
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     ADC #oper     69    2     2
+     zeropage      ADC oper      65    2     3
+     zeropage,X    ADC oper,X    75    2     4
+     absolute      ADC oper      6D    3     4
+     absolute,X    ADC oper,X    7D    3     4*
+     absolute,Y    ADC oper,Y    79    3     4*
+     (indirect,X)  ADC (oper,X)  61    2     6
+     (indirect),Y  ADC (oper),Y  71    2     5*
+
+
+<span class="opcode" aria-label="opcode" id="AND">AND</span>  AND Memory with Accumulator
+
+     A AND M -&gt; A                     N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     AND #oper     29    2     2
+     zeropage      AND oper      25    2     3
+     zeropage,X    AND oper,X    35    2     4
+     absolute      AND oper      2D    3     4
+     absolute,X    AND oper,X    3D    3     4*
+     absolute,Y    AND oper,Y    39    3     4*
+     (indirect,X)  AND (oper,X)  21    2     6
+     (indirect),Y  AND (oper),Y  31    2     5*
+
+
+<span class="opcode" aria-label="opcode" id="ASL">ASL</span>  Shift Left One Bit (Memory or Accumulator)
+
+     C &lt;- [76543210] &lt;- 0             N Z C I D V
+                                      + + + - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     accumulator   ASL A         0A    1     2
+     zeropage      ASL oper      06    2     5
+     zeropage,X    ASL oper,X    16    2     6
+     absolute      ASL oper      0E    3     6
+     absolute,X    ASL oper,X    1E    3     7
+
+
+<span class="opcode" aria-label="opcode" id="BCC">BCC</span>  Branch on Carry Clear
+
+     branch on C = 0                  N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     relative      BCC oper      90    2     2**
+
+
+<span class="opcode" aria-label="opcode" id="BCS">BCS</span>  Branch on Carry Set
+
+     branch on C = 1                  N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     relative      BCS oper      B0    2     2**
+
+
+<span class="opcode" aria-label="opcode" id="BEQ">BEQ</span>  Branch on Result Zero
+
+     branch on Z = 1                  N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     relative      BEQ oper      F0    2     2**
+
+
+<span class="opcode" aria-label="opcode" id="BIT">BIT</span>  Test Bits in Memory with Accumulator
+
+     bits 7 and 6 of operand are transfered to bit 7 and 6 of SR (N,V);
+     the zeroflag is set to the result of operand AND accumulator.
+
+     A AND M, M7 -&gt; N, M6 -&gt; V        N Z C I D V
+                                     M7 + - - - M6
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     zeropage      BIT oper      24    2     3
+     absolute      BIT oper      2C    3     4
+
+
+<span class="opcode" aria-label="opcode" id="BMI">BMI</span>  Branch on Result Minus
+
+     branch on N = 1                  N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     relative      BMI oper      30    2     2**
+
+
+<span class="opcode" aria-label="opcode" id="BNE">BNE</span>  Branch on Result not Zero
+
+     branch on Z = 0                  N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     relative      BNE oper      D0    2     2**
+
+
+<span class="opcode" aria-label="opcode" id="BPL">BPL</span>  Branch on Result Plus
+
+     branch on N = 0                  N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     relative      BPL oper      10    2     2**
+
+
+<span class="opcode" aria-label="opcode" id="BRK">BRK</span>  Force Break
+
+     interrupt,                       N Z C I D V
+     push PC+2, push SR               - - - 1 - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       BRK           00    1     7
+
+
+<span class="opcode" aria-label="opcode" id="BVC">BVC</span>  Branch on Overflow Clear
+
+     branch on V = 0                  N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     relative      BVC oper      50    2     2**
+
+
+<span class="opcode" aria-label="opcode" id="BVS">BVS</span>  Branch on Overflow Set
+
+     branch on V = 1                  N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     relative      BVC oper      70    2     2**
+
+
+<span class="opcode" aria-label="opcode" id="CLC">CLC</span>  Clear Carry Flag
+
+     0 -&gt; C                           N Z C I D V
+                                      - - 0 - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       CLC           18    1     2
+
+
+<span class="opcode" aria-label="opcode" id="CLD">CLD</span>  Clear Decimal Mode
+
+     0 -&gt; D                           N Z C I D V
+                                      - - - - 0 -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       CLD           D8    1     2
+
+
+<span class="opcode" aria-label="opcode" id="CLI">CLI</span>  Clear Interrupt Disable Bit
+
+     0 -&gt; I                           N Z C I D V
+                                      - - - 0 - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       CLI           58    1     2
+
+
+<span class="opcode" aria-label="opcode" id="CLV">CLV</span>  Clear Overflow Flag
+
+     0 -&gt; V                           N Z C I D V
+                                      - - - - - 0
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       CLV           B8    1     2
+
+
+<span class="opcode" aria-label="opcode" id="CMP">CMP</span>  Compare Memory with Accumulator
+
+     A - M                            N Z C I D V
+                                    + + + - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     CMP #oper     C9    2     2
+     zeropage      CMP oper      C5    2     3
+     zeropage,X    CMP oper,X    D5    2     4
+     absolute      CMP oper      CD    3     4
+     absolute,X    CMP oper,X    DD    3     4*
+     absolute,Y    CMP oper,Y    D9    3     4*
+     (indirect,X)  CMP (oper,X)  C1    2     6
+     (indirect),Y  CMP (oper),Y  D1    2     5*
+
+
+<span class="opcode" aria-label="opcode" id="CPX">CPX</span>  Compare Memory and Index X
+
+     X - M                            N Z C I D V
+                                      + + + - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     CPX #oper     E0    2     2
+     zeropage      CPX oper      E4    2     3
+     absolute      CPX oper      EC    3     4
+
+
+<span class="opcode" aria-label="opcode" id="CPY">CPY</span>  Compare Memory and Index Y
+
+     Y - M                            N Z C I D V
+                                      + + + - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     CPY #oper     C0    2     2
+     zeropage      CPY oper      C4    2     3
+     absolute      CPY oper      CC    3     4
+
+
+<span class="opcode" aria-label="opcode" id="DEC">DEC</span>  Decrement Memory by One
+
+     M - 1 -&gt; M                       N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     zeropage      DEC oper      C6    2     5
+     zeropage,X    DEC oper,X    D6    2     6
+     absolute      DEC oper      CE    3     6
+     absolute,X    DEC oper,X    DE    3     7
+
+
+<span class="opcode" aria-label="opcode" id="DEX">DEX</span>  Decrement Index X by One
+
+     X - 1 -&gt; X                       N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       DEC           CA    1     2
+
+
+<span class="opcode" aria-label="opcode" id="DEY">DEY</span>  Decrement Index Y by One
+
+     Y - 1 -&gt; Y                       N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       DEC           88    1     2
+
+
+<span class="opcode" aria-label="opcode" id="EOR">EOR</span>  Exclusive-OR Memory with Accumulator
+
+     A EOR M -&gt; A                     N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     EOR #oper     49    2     2
+     zeropage      EOR oper      45    2     3
+     zeropage,X    EOR oper,X    55    2     4
+     absolute      EOR oper      4D    3     4
+     absolute,X    EOR oper,X    5D    3     4*
+     absolute,Y    EOR oper,Y    59    3     4*
+     (indirect,X)  EOR (oper,X)  41    2     6
+     (indirect),Y  EOR (oper),Y  51    2     5*
+
+
+<span class="opcode" aria-label="opcode" id="INC">INC</span>  Increment Memory by One
+
+     M + 1 -&gt; M                       N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     zeropage      INC oper      E6    2     5
+     zeropage,X    INC oper,X    F6    2     6
+     absolute      INC oper      EE    3     6
+     absolute,X    INC oper,X    FE    3     7
+
+
+<span class="opcode" aria-label="opcode" id="INX">INX</span>  Increment Index X by One
+
+     X + 1 -&gt; X                       N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       INX           E8    1     2
+
+
+<span class="opcode" aria-label="opcode" id="INY">INY</span>  Increment Index Y by One
+
+     Y + 1 -&gt; Y                       N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       INY           C8    1     2
+
+
+<span class="opcode" aria-label="opcode" id="JMP">JMP</span>  Jump to New Location
+
+     (PC+1) -&gt; PCL                    N Z C I D V
+     (PC+2) -&gt; PCH                    - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     absolute      JMP oper      4C    3     3
+     indirect      JMP (oper)    6C    3     5
+
+
+<span class="opcode" aria-label="opcode" id="JSR">JSR</span>  Jump to New Location Saving Return Address
+
+     push (PC+2),                     N Z C I D V
+     (PC+1) -&gt; PCL                    - - - - - -
+     (PC+2) -&gt; PCH
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     absolute      JSR oper      20    3     6
+
+
+<span class="opcode" aria-label="opcode" id="LDA">LDA</span>  Load Accumulator with Memory
+
+     M -&gt; A                           N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     LDA #oper     A9    2     2
+     zeropage      LDA oper      A5    2     3
+     zeropage,X    LDA oper,X    B5    2     4
+     absolute      LDA oper      AD    3     4
+     absolute,X    LDA oper,X    BD    3     4*
+     absolute,Y    LDA oper,Y    B9    3     4*
+     (indirect,X)  LDA (oper,X)  A1    2     6
+     (indirect),Y  LDA (oper),Y  B1    2     5*
+
+
+<span class="opcode" aria-label="opcode" id="LDX">LDX</span>  Load Index X with Memory
+
+     M -&gt; X                           N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     LDX #oper     A2    2     2
+     zeropage      LDX oper      A6    2     3
+     zeropage,Y    LDX oper,Y    B6    2     4
+     absolute      LDX oper      AE    3     4
+     absolute,Y    LDX oper,Y    BE    3     4*
+
+
+<span class="opcode" aria-label="opcode" id="LDY">LDY</span>  Load Index Y with Memory
+
+     M -&gt; Y                           N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     LDY #oper     A0    2     2
+     zeropage      LDY oper      A4    2     3
+     zeropage,X    LDY oper,X    B4    2     4
+     absolute      LDY oper      AC    3     4
+     absolute,X    LDY oper,X    BC    3     4*
+
+
+<span class="opcode" aria-label="opcode" id="LSR">LSR</span>  Shift One Bit Right (Memory or Accumulator)
+
+     0 -&gt; [76543210] -&gt; C             N Z C I D V
+                                      0 + + - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     accumulator   LSR A         4A    1     2
+     zeropage      LSR oper      46    2     5
+     zeropage,X    LSR oper,X    56    2     6
+     absolute      LSR oper      4E    3     6
+     absolute,X    LSR oper,X    5E    3     7
+
+
+<span class="opcode" aria-label="opcode" id="NOP">NOP</span>  No Operation
+
+     ---                              N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       NOP           EA    1     2
+
+
+<span class="opcode" aria-label="opcode" id="ORA">ORA</span>  OR Memory with Accumulator
+
+     A OR M -&gt; A                      N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     ORA #oper     09    2     2
+     zeropage      ORA oper      05    2     3
+     zeropage,X    ORA oper,X    15    2     4
+     absolute      ORA oper      0D    3     4
+     absolute,X    ORA oper,X    1D    3     4*
+     absolute,Y    ORA oper,Y    19    3     4*
+     (indirect,X)  ORA (oper,X)  01    2     6
+     (indirect),Y  ORA (oper),Y  11    2     5*
+
+
+<span class="opcode" aria-label="opcode" id="PHA">PHA</span>  Push Accumulator on Stack
+
+     push A                           N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       PHA           48    1     3
+
+
+<span class="opcode" aria-label="opcode" id="PHP">PHP</span>  Push Processor Status on Stack
+
+     push SR                          N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       PHP           08    1     3
+
+
+<span class="opcode" aria-label="opcode" id="PLA">PLA</span>  Pull Accumulator from Stack
+
+     pull A                           N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       PLA           68    1     4
+
+
+<span class="opcode" aria-label="opcode" id="PLP">PLP</span>  Pull Processor Status from Stack
+
+     pull SR                          N Z C I D V
+                                      from stack
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       PLP           28    1     4
+
+
+<span class="opcode" aria-label="opcode" id="ROL">ROL</span>  Rotate One Bit Left (Memory or Accumulator)
+
+     C &lt;- [76543210] &lt;- C             N Z C I D V
+                                      + + + - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     accumulator   ROL A         2A    1     2
+     zeropage      ROL oper      26    2     5
+     zeropage,X    ROL oper,X    36    2     6
+     absolute      ROL oper      2E    3     6
+     absolute,X    ROL oper,X    3E    3     7
+
+
+<span class="opcode" aria-label="opcode" id="ROR">ROR</span>  Rotate One Bit Right (Memory or Accumulator)
+
+     C -&gt; [76543210] -&gt; C             N Z C I D V
+                                      + + + - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     accumulator   ROR A         6A    1     2
+     zeropage      ROR oper      66    2     5
+     zeropage,X    ROR oper,X    76    2     6
+     absolute      ROR oper      6E    3     6
+     absolute,X    ROR oper,X    7E    3     7
+
+
+<span class="opcode" aria-label="opcode" id="RTI">RTI</span>  Return from Interrupt
+
+     pull SR, pull PC                 N Z C I D V
+                                      from stack
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       RTI           40    1     6
+
+
+<span class="opcode" aria-label="opcode" id="RTS">RTS</span>  Return from Subroutine
+
+     pull PC, PC+1 -&gt; PC              N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       RTS           60    1     6
+
+
+<span class="opcode" aria-label="opcode" id="SBC">SBC</span>  Subtract Memory from Accumulator with Borrow
+
+     A - M - C -&gt; A                   N Z C I D V
+                                      + + + - - +
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     immidiate     SBC #oper     E9    2     2
+     zeropage      SBC oper      E5    2     3
+     zeropage,X    SBC oper,X    F5    2     4
+     absolute      SBC oper      ED    3     4
+     absolute,X    SBC oper,X    FD    3     4*
+     absolute,Y    SBC oper,Y    F9    3     4*
+     (indirect,X)  SBC (oper,X)  E1    2     6
+     (indirect),Y  SBC (oper),Y  F1    2     5*
+
+
+<span class="opcode" aria-label="opcode" id="SEC">SEC</span>  Set Carry Flag
+
+     1 -&gt; C                           N Z C I D V
+                                      - - 1 - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       SEC           38    1     2
+
+
+<span class="opcode" aria-label="opcode" id="SED">SED</span>  Set Decimal Flag
+
+     1 -&gt; D                           N Z C I D V
+                                      - - - - 1 -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       SED           F8    1     2
+
+
+<span class="opcode" aria-label="opcode" id="SEI">SEI</span>  Set Interrupt Disable Status
+
+     1 -&gt; I                           N Z C I D V
+                                      - - - 1 - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       SEI           78    1     2
+
+
+<span class="opcode" aria-label="opcode" id="STA">STA</span>  Store Accumulator in Memory
+
+     A -&gt; M                           N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     zeropage      STA oper      85    2     3
+     zeropage,X    STA oper,X    95    2     4
+     absolute      STA oper      8D    3     4
+     absolute,X    STA oper,X    9D    3     5
+     absolute,Y    STA oper,Y    99    3     5
+     (indirect,X)  STA (oper,X)  81    2     6
+     (indirect),Y  STA (oper),Y  91    2     6
+
+
+<span class="opcode" aria-label="opcode" id="STX">STX</span>  Store Index X in Memory
+
+     X -&gt; M                           N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     zeropage      STX oper      86    2     3
+     zeropage,Y    STX oper,Y    96    2     4
+     absolute      STX oper      8E    3     4
+
+
+<span class="opcode" aria-label="opcode" id="STY">STY</span>  Sore Index Y in Memory
+
+     Y -&gt; M                           N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     zeropage      STY oper      84    2     3
+     zeropage,X    STY oper,X    94    2     4
+     absolute      STY oper      8C    3     4
+
+
+<span class="opcode" aria-label="opcode" id="TAX">TAX</span>  Transfer Accumulator to Index X
+
+     A -&gt; X                           N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       TAX           AA    1     2
+
+
+<span class="opcode" aria-label="opcode" id="TAY">TAY</span>  Transfer Accumulator to Index Y
+
+     A -&gt; Y                           N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       TAY           A8    1     2
+
+
+<span class="opcode" aria-label="opcode" id="TSX">TSX</span>  Transfer Stack Pointer to Index X
+
+     SP -&gt; X                          N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       TSX           BA    1     2
+
+
+<span class="opcode" aria-label="opcode" id="TXA">TXA</span>  Transfer Index X to Accumulator
+
+     X -&gt; A                           N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       TXA           8A    1     2
+
+
+<span class="opcode" aria-label="opcode" id="TXS">TXS</span>  Transfer Index X to Stack Register
+
+     X -&gt; SP                          N Z C I D V
+                                      - - - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       TXS           9A    1     2
+
+
+<span class="opcode" aria-label="opcode" id="TYA">TYA</span>  Transfer Index Y to Accumulator
+
+     Y -&gt; A                           N Z C I D V
+                                      + + - - - -
+
+     addressing    assembler    opc  bytes  cyles
+     --------------------------------------------
+     implied       TYA           98    1     2
+
+
+
+  *  add 1 to cycles if page boundery is crossed
+
+  ** add 1 to cycles if branch occurs on same page
+     add 2 to cycles if branch occurs to different page
+
+
+     Legend to Flags:  + .... modified
+                       - .... not modified
+                       1 .... set
+                       0 .... cleared
+                      M6 .... memory bit 6
+                      M7 .... memory bit 7
+
+
+Note on assembler syntax:
+Most assemblers employ "OPC *oper" for forced zeropage addressing.
+
+
+</pre>
+
+
+<h2 id="stck">Appendix B: 6502 Jump Vectors and Stack Operations</h2>
+
+<p>The 256 bytes processor stack of the 6502 is located at $0100 ... $01FF in<br>memory, growing down from top to bottom.<br>There are three 2-byte address locations at the very top end of the 64K address<br>space serving as jump vectors for reset/startup and interrupt operations:</p>
+
+<p style="margin: 1.5em 0 1.5em 1em;">$FFFA, $FFFB ... NMI (Non-Maskable Interrupt) vector<br>
+$FFFC, $FFFD ... RES (Reset) vector<br>
+$FFFE, $FFFF ... IRQ (Interrupt Request) vector</p>
+
+<p>At the occurrence of interrupt, the value of the program counter (PC) is put in<br>high-low order onto the stack, followed by the value currently in the status<br>register and control will be transferred to the address location found in the<br>respective interrupt vector. These are recovered from the stack at the end of<br>an interrupt routine by the RTI instruction.</p>
+
+<figure>
+<img src="./files/mcs6502-interrupt-ops.png" alt="6502 Interrupt Operations" width="480" height="593">
+<figcaption>(Image: MCS6502 Instruction Set Summary, MOS Technology, Inc.)</figcaption>
+</figure>
+
+<p>Similarly, as a JSR instruction is encountered, PC is dumped onto the stack<br>and recovered by the JSR instruction:</p>
+
+<figure style="margin-bottom: 3em;">
+<img src="./files/mcs6502-jsr-rts-ops.png" alt="6502 Subroutine Operations" width="480" height="593">
+<figcaption>(Image: MCS6502 Instruction Set Summary, MOS Technology, Inc.)</figcaption>
+</figure>
+
+<h2 id="layout">Appendix C: 6502 Instruction Layout</h2>
+<div class="explanation">
+<p>The 6502 instruction table is laid out according to a pattern <em>a-b-c,</em> where<br>
+<em>a</em> and <em>b</em> are an octal number each, followed by a group of two binary digits <em>c,</em><br>
+as in the bit-vector <em>"aaabbbcc".</em></p>
+
+<p><u>Example:</u><br>
+All ROR instructions share <em>a</em> = 3 and <em>c</em> = 2 with the address mode in <em>b</em> (3x2).<br>
+At the same time, all instructions addressing the zero-page share <em>b</em> = 1 (x1x).<br>
+<em>abc</em> = 312 &nbsp;=&gt;&nbsp; (3 &lt;&lt; 5 | 1 &lt;&lt; 2 | 2) &nbsp;=&nbsp; $66, ROR zpg.</p>
+
+<p>Notably, there are no legal opcodes defined where <em>c</em> = 3, accounting for the<br>
+empty columns in the usual, hexadecimal view of the instruction table.</p>
+
+<p>The following table lists the instruction set, rows sorted by <em>c,</em> then <em>a.</em></p>
+<p>Generally, instructions of a kind are typically found in rows as a combination<br>
+of <em>a</em> and <em>c</em>, and address modes are in columns <em>b</em>.<br>
+However, there are a few exception to this rule, namely, where bits 0 of both<br>
+<em>c</em> and <em>b</em> are low (<em>c</em> = 0, 2; <em>b</em> = 0, 2, 4, 6) and combinations of <em>c</em> and <em>b</em> select<br>
+a group of related operations. (E.g., c=0 ∧ b=4: branch, c=0 ∧ b=6: set flag)</p>
+</div>
+
+<div class="instrlayout-wrapper">
+<table class="instrlayout" aria-label="table representing a complex view on the instruction layout according to components a, b, c.">
+<thead>
+<tr><th rowspan="2">c</th><th rowspan="2" title="3 bits">a</th><th colspan="8">b</th></tr>
+<tr class="bn"><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+</thead>
+<tbody>
+<tr class="r1 r-even g-first"><td rowspan="8" class="c c0">0</td><td class="a a-b">0</td><td class="v0"><span class="opc">$00</span>BRK impl</td><td class="v1"></td><td class="v2"><span class="opc">$08</span>PHP impl</td><td class="v3"></td><td class="v4"><span class="opc">$10</span>BPL rel</td><td class="v5"></td><td class="v6"><span class="opc">$18</span>CLC impl</td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="a a-b">1</td><td class="v0"><span class="opc">$20</span>JSR abs</td><td class="v1"><span class="opc">$24</span>BIT zpg</td><td class="v2"><span class="opc">$28</span>PLP impl</td><td class="v3"><span class="opc">$2C</span>BIT abs</td><td class="v4"><span class="opc">$30</span>BMI rel</td><td class="v5"></td><td class="v6"><span class="opc">$38</span>SEC impl</td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="a a-b">2</td><td class="v0"><span class="opc">$40</span>RTI impl</td><td class="v1"></td><td class="v2"><span class="opc">$48</span>PHA impl</td><td class="v3"><span class="opc">$4C</span>JMP abs</td><td class="v4"><span class="opc">$50</span>BVC rel</td><td class="v5"></td><td class="v6"><span class="opc">$58</span>CLI impl</td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="a a-b">3</td><td class="v0"><span class="opc">$60</span>RTS impl</td><td class="v1"></td><td class="v2"><span class="opc">$68</span>PLA impl</td><td class="v3"><span class="opc">$6C</span>JMP ind</td><td class="v4"><span class="opc">$70</span>BVS rel</td><td class="v5"></td><td class="v6"><span class="opc">$78</span>SEI impl</td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="a a-b">4</td><td class="v0"></td><td class="v1"><span class="opc">$84</span>STY zpg</td><td class="v2"><span class="opc">$88</span>DEY impl</td><td class="v3"><span class="opc">$8C</span>STY abs</td><td class="v4"><span class="opc">$90</span>BCC rel</td><td class="v5"><span class="opc">$94</span>STY zpg,X</td><td class="v6"><span class="opc">$98</span>TYA impl</td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="a a-b">5</td><td class="v0"><span class="opc">$A0</span>LDY  #</td><td class="v1"><span class="opc">$A4</span>LDY zpg</td><td class="v2"><span class="opc">$A8</span>TAY impl</td><td class="v3"><span class="opc">$AC</span>LDY abs</td><td class="v4"><span class="opc">$B0</span>BCS rel</td><td class="v5"><span class="opc">$B4</span>LDY zpg,X</td><td class="v6"><span class="opc">$B8</span>CLV impl</td><td class="v7"><span class="opc">$BC</span>LDY abs,X</td></tr>
+<tr class="r1 r-even"><td class="a a-b">6</td><td class="v0"><span class="opc">$C0</span>CPY  #</td><td class="v1"><span class="opc">$C4</span>CPY zpg</td><td class="v2"><span class="opc">$C8</span>INY impl</td><td class="v3"><span class="opc">$CC</span>CPY abs</td><td class="v4"><span class="opc">$D0</span>BNE rel</td><td class="v5"></td><td class="v6"><span class="opc">$D8</span>CLD impl</td><td class="v7"></td></tr>
+<tr class="r1 r-odd g-last"><td class="a a-b">7</td><td class="v0"><span class="opc">$E0</span>CPX  #</td><td class="v1"><span class="opc">$E4</span>CPX zpg</td><td class="v2"><span class="opc">$E8</span>INX impl</td><td class="v3"><span class="opc">$EC</span>CPX abs</td><td class="v4"><span class="opc">$F0</span>BEQ rel</td><td class="v5"></td><td class="v6"><span class="opc">$F8</span>SED impl</td><td class="v7"></td></tr>
+<tr class="r1 r-even g-first"><td rowspan="8" class="c c1">1</td><td class="a a-b">0</td><td class="v0"><span class="opc">$01</span>ORA X,ind</td><td class="v1"><span class="opc">$05</span>ORA zpg</td><td class="v2"><span class="opc">$09</span>ORA  #</td><td class="v3"><span class="opc">$0D</span>ORA abs</td><td class="v4"><span class="opc">$11</span>ORA ind,Y</td><td class="v5"><span class="opc">$15</span>ORA zpg,X</td><td class="v6"><span class="opc">$19</span>ORA abs,Y</td><td class="v7"><span class="opc">$1D</span>ORA abs,X</td></tr>
+<tr class="r1 r-odd"><td class="a a-b">1</td><td class="v0"><span class="opc">$21</span>AND X,ind</td><td class="v1"><span class="opc">$25</span>AND zpg</td><td class="v2"><span class="opc">$29</span>AND  #</td><td class="v3"><span class="opc">$2D</span>AND abs</td><td class="v4"><span class="opc">$31</span>AND ind,Y</td><td class="v5"><span class="opc">$35</span>AND zpg,X</td><td class="v6"><span class="opc">$39</span>AND abs,Y</td><td class="v7"><span class="opc">$3D</span>AND abs,X</td></tr>
+<tr class="r1 r-even"><td class="a a-b">2</td><td class="v0"><span class="opc">$41</span>EOR X,ind</td><td class="v1"><span class="opc">$45</span>EOR zpg</td><td class="v2"><span class="opc">$49</span>EOR  #</td><td class="v3"><span class="opc">$4D</span>EOR abs</td><td class="v4"><span class="opc">$51</span>EOR ind,Y</td><td class="v5"><span class="opc">$55</span>EOR zpg,X</td><td class="v6"><span class="opc">$59</span>EOR abs,Y</td><td class="v7"><span class="opc">$5D</span>EOR abs,X</td></tr>
+<tr class="r1 r-odd"><td class="a a-b">3</td><td class="v0"><span class="opc">$61</span>ADC X,ind</td><td class="v1"><span class="opc">$65</span>ADC zpg</td><td class="v2"><span class="opc">$69</span>ADC  #</td><td class="v3"><span class="opc">$6D</span>ADC abs</td><td class="v4"><span class="opc">$71</span>ADC ind,Y</td><td class="v5"><span class="opc">$75</span>ADC zpg,X</td><td class="v6"><span class="opc">$79</span>ADC abs,Y</td><td class="v7"><span class="opc">$7D</span>ADC abs,X</td></tr>
+<tr class="r1 r-even"><td class="a a-b">4</td><td class="v0"><span class="opc">$81</span>STA X,ind</td><td class="v1"><span class="opc">$85</span>STA zpg</td><td class="v2"></td><td class="v3"><span class="opc">$8D</span>STA abs</td><td class="v4"><span class="opc">$91</span>STA ind,Y</td><td class="v5"><span class="opc">$95</span>STA zpg,X</td><td class="v6"><span class="opc">$99</span>STA abs,Y</td><td class="v7"><span class="opc">$9D</span>STA abs,X</td></tr>
+<tr class="r1 r-odd"><td class="a a-b">5</td><td class="v0"><span class="opc">$A1</span>LDA X,ind</td><td class="v1"><span class="opc">$A5</span>LDA zpg</td><td class="v2"><span class="opc">$A9</span>LDA  #</td><td class="v3"><span class="opc">$AD</span>LDA abs</td><td class="v4"><span class="opc">$B1</span>LDA ind,Y</td><td class="v5"><span class="opc">$B5</span>LDA zpg,X</td><td class="v6"><span class="opc">$B9</span>LDA abs,Y</td><td class="v7"><span class="opc">$BD</span>LDA abs,X</td></tr>
+<tr class="r1 r-even"><td class="a a-b">6</td><td class="v0"><span class="opc">$C1</span>CMP X,ind</td><td class="v1"><span class="opc">$C5</span>CMP zpg</td><td class="v2"><span class="opc">$C9</span>CMP  #</td><td class="v3"><span class="opc">$CD</span>CMP abs</td><td class="v4"><span class="opc">$D1</span>CMP ind,Y</td><td class="v5"><span class="opc">$D5</span>CMP zpg,X</td><td class="v6"><span class="opc">$D9</span>CMP abs,Y</td><td class="v7"><span class="opc">$DD</span>CMP abs,X</td></tr>
+<tr class="r1 r-odd g-last"><td class="a a-b">7</td><td class="v0"><span class="opc">$E1</span>SBC X,ind</td><td class="v1"><span class="opc">$E5</span>SBC zpg</td><td class="v2"><span class="opc">$E9</span>SBC  #</td><td class="v3"><span class="opc">$ED</span>SBC abs</td><td class="v4"><span class="opc">$F1</span>SBC ind,Y</td><td class="v5"><span class="opc">$F5</span>SBC zpg,X</td><td class="v6"><span class="opc">$F9</span>SBC abs,Y</td><td class="v7"><span class="opc">$FD</span>SBC abs,X</td></tr>
+<tr class="r1 r-even g-first"><td rowspan="8" class="c c2">2</td><td class="a a-b">0</td><td class="v0"></td><td class="v1"><span class="opc">$06</span>ASL zpg</td><td class="v2"><span class="opc">$0A</span>ASL  A</td><td class="v3"><span class="opc">$0E</span>ASL abs</td><td class="v4"></td><td class="v5"><span class="opc">$16</span>ASL zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$1E</span>ASL abs,X</td></tr>
+<tr class="r1 r-odd"><td class="a a-b">1</td><td class="v0"></td><td class="v1"><span class="opc">$26</span>ROL zpg</td><td class="v2"><span class="opc">$2A</span>ROL  A</td><td class="v3"><span class="opc">$2E</span>ROL abs</td><td class="v4"></td><td class="v5"><span class="opc">$36</span>ROL zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$3E</span>ROL abs,X</td></tr>
+<tr class="r1 r-even"><td class="a a-b">2</td><td class="v0"></td><td class="v1"><span class="opc">$46</span>LSR zpg</td><td class="v2"><span class="opc">$4A</span>LSR  A</td><td class="v3"><span class="opc">$4E</span>LSR abs</td><td class="v4"></td><td class="v5"><span class="opc">$56</span>LSR zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$5E</span>LSR abs,X</td></tr>
+<tr class="r1 r-odd"><td class="a a-b">3</td><td class="v0"></td><td class="v1"><span class="opc">$66</span>ROR zpg</td><td class="v2"><span class="opc">$6A</span>ROR  A</td><td class="v3"><span class="opc">$6E</span>ROR abs</td><td class="v4"></td><td class="v5"><span class="opc">$76</span>ROR zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$7E</span>ROR abs,X</td></tr>
+<tr class="r1 r-even"><td class="a a-b">4</td><td class="v0"></td><td class="v1"><span class="opc">$86</span>STX zpg</td><td class="v2"><span class="opc">$8A</span>TXA impl</td><td class="v3"><span class="opc">$8E</span>STX abs</td><td class="v4"></td><td class="v5"><span class="opc">$96</span>STX zpg,Y</td><td class="v6"><span class="opc">$9A</span>TXS impl</td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="a a-b">5</td><td class="v0"><span class="opc">$A2</span>LDX  #</td><td class="v1"><span class="opc">$A6</span>LDX zpg</td><td class="v2"><span class="opc">$AA</span>TAX impl</td><td class="v3"><span class="opc">$AE</span>LDX abs</td><td class="v4"></td><td class="v5"><span class="opc">$B6</span>LDX zpg,Y</td><td class="v6"><span class="opc">$BA</span>TSX impl</td><td class="v7"><span class="opc">$BE</span>LDX abs,Y</td></tr>
+<tr class="r1 r-even"><td class="a a-b">6</td><td class="v0"></td><td class="v1"><span class="opc">$C6</span>DEC zpg</td><td class="v2"><span class="opc">$CA</span>DEX impl</td><td class="v3"><span class="opc">$CE</span>DEC abs</td><td class="v4"></td><td class="v5"><span class="opc">$D6</span>DEC zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$DE</span>DEC abs,X</td></tr>
+<tr class="r1 r-odd g-last"><td class="a a-b">7</td><td class="v0"></td><td class="v1"><span class="opc">$E6</span>INC zpg</td><td class="v2"><span class="opc">$EA</span>NOP impl</td><td class="v3"><span class="opc">$EE</span>INC abs</td><td class="v4"></td><td class="v5"><span class="opc">$F6</span>INC zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$FE</span>INC abs,X</td></tr>
+<!--
+<tr class="r1 r-even g-first"><td rowspan="8" class="c c3">3</td><td class="a a-b">0</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="a a-b">1</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="a a-b">2</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="a a-b">3</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="a a-b">4</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="a a-b">5</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="a a-b">6</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd g-last"><td class="a a-b">7</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+-->
+</tbody>
+</table>
+</div>
+<p style="margin: -1.2em 0 2.4em 0;"><em>Note: The operand of instructions like "ASL A" is essentially implied, as well.<br>
+However, for consistency, they are here listed in the usual "CMD A" notation,<br>
+instead of "CMD impl". Mind that the two notations are interchangeable for any<br>
+instructions involving the accumulator.</em></p> 
+
+<p class="explanation">A rotated view, rows as combinations of <em>c</em> and <em>b,</em> and columns as <em>a</em>:</p>
+
+<div class="instrlayout-wrapper">
+<table class="instrlayout" aria-label="table representing a complex view on the instruction layout according to components a, b, c.">
+<thead>
+<tr><th rowspan="2">c</th><th rowspan="2" title="3 bits">b</th><th colspan="8">a</th></tr>
+<tr class="bn"><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+</thead>
+<tbody>
+<tr class="r1 r-even g-first"><td rowspan="8" class="c c0">0</td><td class="b a-b">0</td><td class="v0"><span class="opc">$00</span>BRK impl</td><td class="v1"><span class="opc">$20</span>JSR abs</td><td class="v2"><span class="opc">$40</span>RTI impl</td><td class="v3"><span class="opc">$60</span>RTS impl</td><td class="v4"></td><td class="v5"><span class="opc">$A0</span>LDY  #</td><td class="v6"><span class="opc">$C0</span>CPY  #</td><td class="v7"><span class="opc">$E0</span>CPX  #</td></tr>
+<tr class="r1 r-odd"><td class="b a-b">1</td><td class="v0"></td><td class="v1"><span class="opc">$24</span>BIT zpg</td><td class="v2"></td><td class="v3"></td><td class="v4"><span class="opc">$84</span>STY zpg</td><td class="v5"><span class="opc">$A4</span>LDY zpg</td><td class="v6"><span class="opc">$C4</span>CPY zpg</td><td class="v7"><span class="opc">$E4</span>CPX zpg</td></tr>
+<tr class="r1 r-even"><td class="b a-b">2</td><td class="v0"><span class="opc">$08</span>PHP impl</td><td class="v1"><span class="opc">$28</span>PLP impl</td><td class="v2"><span class="opc">$48</span>PHA impl</td><td class="v3"><span class="opc">$68</span>PLA impl</td><td class="v4"><span class="opc">$88</span>DEY impl</td><td class="v5"><span class="opc">$A8</span>TAY impl</td><td class="v6"><span class="opc">$C8</span>INY impl</td><td class="v7"><span class="opc">$E8</span>INX impl</td></tr>
+<tr class="r1 r-odd"><td class="b a-b">3</td><td class="v0"></td><td class="v1"><span class="opc">$2C</span>BIT abs</td><td class="v2"><span class="opc">$4C</span>JMP abs</td><td class="v3"><span class="opc">$6C</span>JMP ind</td><td class="v4"><span class="opc">$8C</span>STY abs</td><td class="v5"><span class="opc">$AC</span>LDY abs</td><td class="v6"><span class="opc">$CC</span>CPY abs</td><td class="v7"><span class="opc">$EC</span>CPX abs</td></tr>
+<tr class="r1 r-even"><td class="b a-b">4</td><td class="v0"><span class="opc">$10</span>BPL rel</td><td class="v1"><span class="opc">$30</span>BMI rel</td><td class="v2"><span class="opc">$50</span>BVC rel</td><td class="v3"><span class="opc">$70</span>BVS rel</td><td class="v4"><span class="opc">$90</span>BCC rel</td><td class="v5"><span class="opc">$B0</span>BCS rel</td><td class="v6"><span class="opc">$D0</span>BNE rel</td><td class="v7"><span class="opc">$F0</span>BEQ rel</td></tr>
+<tr class="r1 r-odd"><td class="b a-b">5</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"><span class="opc">$94</span>STY zpg,X</td><td class="v5"><span class="opc">$B4</span>LDY zpg,X</td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="b a-b">6</td><td class="v0"><span class="opc">$18</span>CLC impl</td><td class="v1"><span class="opc">$38</span>SEC impl</td><td class="v2"><span class="opc">$58</span>CLI impl</td><td class="v3"><span class="opc">$78</span>SEI impl</td><td class="v4"><span class="opc">$98</span>TYA impl</td><td class="v5"><span class="opc">$B8</span>CLV impl</td><td class="v6"><span class="opc">$D8</span>CLD impl</td><td class="v7"><span class="opc">$F8</span>SED impl</td></tr>
+<tr class="r1 r-odd g-last"><td class="b a-b">7</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"><span class="opc">$BC</span>LDY abs,X</td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-even g-first"><td rowspan="8" class="c c1">1</td><td class="b a-b">0</td><td class="v0"><span class="opc">$01</span>ORA X,ind</td><td class="v1"><span class="opc">$21</span>AND X,ind</td><td class="v2"><span class="opc">$41</span>EOR X,ind</td><td class="v3"><span class="opc">$61</span>ADC X,ind</td><td class="v4"><span class="opc">$81</span>STA X,ind</td><td class="v5"><span class="opc">$A1</span>LDA X,ind</td><td class="v6"><span class="opc">$C1</span>CMP X,ind</td><td class="v7"><span class="opc">$E1</span>SBC X,ind</td></tr>
+<tr class="r1 r-odd"><td class="b a-b">1</td><td class="v0"><span class="opc">$05</span>ORA zpg</td><td class="v1"><span class="opc">$25</span>AND zpg</td><td class="v2"><span class="opc">$45</span>EOR zpg</td><td class="v3"><span class="opc">$65</span>ADC zpg</td><td class="v4"><span class="opc">$85</span>STA zpg</td><td class="v5"><span class="opc">$A5</span>LDA zpg</td><td class="v6"><span class="opc">$C5</span>CMP zpg</td><td class="v7"><span class="opc">$E5</span>SBC zpg</td></tr>
+<tr class="r1 r-even"><td class="b a-b">2</td><td class="v0"><span class="opc">$09</span>ORA  #</td><td class="v1"><span class="opc">$29</span>AND  #</td><td class="v2"><span class="opc">$49</span>EOR  #</td><td class="v3"><span class="opc">$69</span>ADC  #</td><td class="v4"></td><td class="v5"><span class="opc">$A9</span>LDA  #</td><td class="v6"><span class="opc">$C9</span>CMP  #</td><td class="v7"><span class="opc">$E9</span>SBC  #</td></tr>
+<tr class="r1 r-odd"><td class="b a-b">3</td><td class="v0"><span class="opc">$0D</span>ORA abs</td><td class="v1"><span class="opc">$2D</span>AND abs</td><td class="v2"><span class="opc">$4D</span>EOR abs</td><td class="v3"><span class="opc">$6D</span>ADC abs</td><td class="v4"><span class="opc">$8D</span>STA abs</td><td class="v5"><span class="opc">$AD</span>LDA abs</td><td class="v6"><span class="opc">$CD</span>CMP abs</td><td class="v7"><span class="opc">$ED</span>SBC abs</td></tr>
+<tr class="r1 r-even"><td class="b a-b">4</td><td class="v0"><span class="opc">$11</span>ORA ind,Y</td><td class="v1"><span class="opc">$31</span>AND ind,Y</td><td class="v2"><span class="opc">$51</span>EOR ind,Y</td><td class="v3"><span class="opc">$71</span>ADC ind,Y</td><td class="v4"><span class="opc">$91</span>STA ind,Y</td><td class="v5"><span class="opc">$B1</span>LDA ind,Y</td><td class="v6"><span class="opc">$D1</span>CMP ind,Y</td><td class="v7"><span class="opc">$F1</span>SBC ind,Y</td></tr>
+<tr class="r1 r-odd"><td class="b a-b">5</td><td class="v0"><span class="opc">$15</span>ORA zpg,X</td><td class="v1"><span class="opc">$35</span>AND zpg,X</td><td class="v2"><span class="opc">$55</span>EOR zpg,X</td><td class="v3"><span class="opc">$75</span>ADC zpg,X</td><td class="v4"><span class="opc">$95</span>STA zpg,X</td><td class="v5"><span class="opc">$B5</span>LDA zpg,X</td><td class="v6"><span class="opc">$D5</span>CMP zpg,X</td><td class="v7"><span class="opc">$F5</span>SBC zpg,X</td></tr>
+<tr class="r1 r-even"><td class="b a-b">6</td><td class="v0"><span class="opc">$19</span>ORA abs,Y</td><td class="v1"><span class="opc">$39</span>AND abs,Y</td><td class="v2"><span class="opc">$59</span>EOR abs,Y</td><td class="v3"><span class="opc">$79</span>ADC abs,Y</td><td class="v4"><span class="opc">$99</span>STA abs,Y</td><td class="v5"><span class="opc">$B9</span>LDA abs,Y</td><td class="v6"><span class="opc">$D9</span>CMP abs,Y</td><td class="v7"><span class="opc">$F9</span>SBC abs,Y</td></tr>
+<tr class="r1 r-odd g-last"><td class="b a-b">7</td><td class="v0"><span class="opc">$1D</span>ORA abs,X</td><td class="v1"><span class="opc">$3D</span>AND abs,X</td><td class="v2"><span class="opc">$5D</span>EOR abs,X</td><td class="v3"><span class="opc">$7D</span>ADC abs,X</td><td class="v4"><span class="opc">$9D</span>STA abs,X</td><td class="v5"><span class="opc">$BD</span>LDA abs,X</td><td class="v6"><span class="opc">$DD</span>CMP abs,X</td><td class="v7"><span class="opc">$FD</span>SBC abs,X</td></tr>
+<tr class="r1 r-even g-first"><td rowspan="8" class="c c2">2</td><td class="b a-b">0</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"><span class="opc">$A2</span>LDX  #</td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="b a-b">1</td><td class="v0"><span class="opc">$06</span>ASL zpg</td><td class="v1"><span class="opc">$26</span>ROL zpg</td><td class="v2"><span class="opc">$46</span>LSR zpg</td><td class="v3"><span class="opc">$66</span>ROR zpg</td><td class="v4"><span class="opc">$86</span>STX zpg</td><td class="v5"><span class="opc">$A6</span>LDX zpg</td><td class="v6"><span class="opc">$C6</span>DEC zpg</td><td class="v7"><span class="opc">$E6</span>INC zpg</td></tr>
+<tr class="r1 r-even"><td class="b a-b">2</td><td class="v0"><span class="opc">$0A</span>ASL  A</td><td class="v1"><span class="opc">$2A</span>ROL  A</td><td class="v2"><span class="opc">$4A</span>LSR  A</td><td class="v3"><span class="opc">$6A</span>ROR  A</td><td class="v4"><span class="opc">$8A</span>TXA impl</td><td class="v5"><span class="opc">$AA</span>TAX impl</td><td class="v6"><span class="opc">$CA</span>DEX impl</td><td class="v7"><span class="opc">$EA</span>NOP impl</td></tr>
+<tr class="r1 r-odd"><td class="b a-b">3</td><td class="v0"><span class="opc">$0E</span>ASL abs</td><td class="v1"><span class="opc">$2E</span>ROL abs</td><td class="v2"><span class="opc">$4E</span>LSR abs</td><td class="v3"><span class="opc">$6E</span>ROR abs</td><td class="v4"><span class="opc">$8E</span>STX abs</td><td class="v5"><span class="opc">$AE</span>LDX abs</td><td class="v6"><span class="opc">$CE</span>DEC abs</td><td class="v7"><span class="opc">$EE</span>INC abs</td></tr>
+<tr class="r1 r-even"><td class="b a-b">4</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="b a-b">5</td><td class="v0"><span class="opc">$16</span>ASL zpg,X</td><td class="v1"><span class="opc">$36</span>ROL zpg,X</td><td class="v2"><span class="opc">$56</span>LSR zpg,X</td><td class="v3"><span class="opc">$76</span>ROR zpg,X</td><td class="v4"><span class="opc">$96</span>STX zpg,Y</td><td class="v5"><span class="opc">$B6</span>LDX zpg,Y</td><td class="v6"><span class="opc">$D6</span>DEC zpg,X</td><td class="v7"><span class="opc">$F6</span>INC zpg,X</td></tr>
+<tr class="r1 r-even"><td class="b a-b">6</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"><span class="opc">$9A</span>TXS impl</td><td class="v5"><span class="opc">$BA</span>TSX impl</td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd g-last"><td class="b a-b">7</td><td class="v0"><span class="opc">$1E</span>ASL abs,X</td><td class="v1"><span class="opc">$3E</span>ROL abs,X</td><td class="v2"><span class="opc">$5E</span>LSR abs,X</td><td class="v3"><span class="opc">$7E</span>ROR abs,X</td><td class="v4"></td><td class="v5"><span class="opc">$BE</span>LDX abs,Y</td><td class="v6"><span class="opc">$DE</span>DEC abs,X</td><td class="v7"><span class="opc">$FE</span>INC abs,X</td></tr>
+<!--
+<tr class="r1 r-even g-first"><td rowspan="8" class="c c3">3</td><td class="b a-b">0</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="b a-b">1</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="b a-b">2</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="b a-b">3</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="b a-b">4</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd"><td class="b a-b">5</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-even"><td class="b a-b">6</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+<tr class="r1 r-odd g-last"><td class="b a-b">7</td><td class="v0"></td><td class="v1"></td><td class="v2"></td><td class="v3"></td><td class="v4"></td><td class="v5"></td><td class="v6"></td><td class="v7"></td></tr>
+-->
+</tbody>
+</table>
+</div>
+
+<div class="explanation">
+<p>Finally, a more complex view, the instruction set listed by rows as<br>
+combinations of <em>a</em> and <em>c,</em> and <em>b</em> in columns:</p>
+<p>Address modes are either a property of <em>b</em> (even columns) or combinations<br>
+of <em>b</em> and <em>c</em> (odd columns with aspecific row-index modulus 3; i.e., every<br>
+third row in a given column). In those latter columns, first and third<br>
+rows (<em>c</em> = 0 and <em>c</em> = 2) refer to the same kind of general operation.</p>
+<p>Load, store and transfer instructions as well as comparisons are typically<br>
+found in the lower half of the table, while most of the arithmetical and<br>
+logical operations as well as stack and jump instructions are found in the<br>
+upper half. (However, mind the exception of SBC as a "mirror" of ADC.)</p>
+</div>
+
+<div class="instrlayout-wrapper">
+<table class="instrlayout" aria-label="table representing a complex view on the instruction layout according to components a, b, c.">
+<thead>
+<tr><th rowspan="2">a</th><th rowspan="2" title="2 bits">c</th><th colspan="8">b</th></tr>
+<tr class="bn"><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+</thead>
+<tbody>
+<tr class="r0 g-first r-even"><td rowspan="3" class="a a-b">0</td><td class="c c0">0</td><td class="v0"><span class="opc">$00</span>BRK impl</td><td class="v1"></td><td class="v2"><span class="opc">$08</span>PHP impl</td><td class="v3"></td><td class="v4"><span class="opc">$10</span>BPL rel</td><td class="v5"></td><td class="v6"><span class="opc">$18</span>CLC impl</td><td class="v7"></td></tr>
+<tr class="r1"><td class="c c1">1</td><td class="v0"><span class="opc">$01</span>ORA X,ind</td><td class="v1"><span class="opc">$05</span>ORA zpg</td><td class="v2"><span class="opc">$09</span>ORA  #</td><td class="v3"><span class="opc">$0D</span>ORA abs</td><td class="v4"><span class="opc">$11</span>ORA ind,Y</td><td class="v5"><span class="opc">$15</span>ORA zpg,X</td><td class="v6"><span class="opc">$19</span>ORA abs,Y</td><td class="v7"><span class="opc">$1D</span>ORA abs,X</td></tr>
+<tr class="r2"><td class="c c2">2</td><td class="v0"></td><td class="v1"><span class="opc">$06</span>ASL zpg</td><td class="v2"><span class="opc">$0A</span>ASL  A</td><td class="v3"><span class="opc">$0E</span>ASL abs</td><td class="v4"></td><td class="v5"><span class="opc">$16</span>ASL zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$1E</span>ASL abs,X</td></tr>
+<tr class="r0 g-first r-odd"><td rowspan="3" class="a a-b">1</td><td class="c c0">0</td><td class="v0"><span class="opc">$20</span>JSR abs</td><td class="v1"><span class="opc">$24</span>BIT zpg</td><td class="v2"><span class="opc">$28</span>PLP impl</td><td class="v3"><span class="opc">$2C</span>BIT abs</td><td class="v4"><span class="opc">$30</span>BMI rel</td><td class="v5"></td><td class="v6"><span class="opc">$38</span>SEC impl</td><td class="v7"></td></tr>
+<tr class="r1"><td class="c c1">1</td><td class="v0"><span class="opc">$21</span>AND X,ind</td><td class="v1"><span class="opc">$25</span>AND zpg</td><td class="v2"><span class="opc">$29</span>AND  #</td><td class="v3"><span class="opc">$2D</span>AND abs</td><td class="v4"><span class="opc">$31</span>AND ind,Y</td><td class="v5"><span class="opc">$35</span>AND zpg,X</td><td class="v6"><span class="opc">$39</span>AND abs,Y</td><td class="v7"><span class="opc">$3D</span>AND abs,X</td></tr>
+<tr class="r2"><td class="c c2">2</td><td class="v0"></td><td class="v1"><span class="opc">$26</span>ROL zpg</td><td class="v2"><span class="opc">$2A</span>ROL  A</td><td class="v3"><span class="opc">$2E</span>ROL abs</td><td class="v4"></td><td class="v5"><span class="opc">$36</span>ROL zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$3E</span>ROL abs,X</td></tr>
+<tr class="r0 g-first r-even"><td rowspan="3" class="a a-b">2</td><td class="c c0">0</td><td class="v0"><span class="opc">$40</span>RTI impl</td><td class="v1"></td><td class="v2"><span class="opc">$48</span>PHA impl</td><td class="v3"><span class="opc">$4C</span>JMP abs</td><td class="v4"><span class="opc">$50</span>BVC rel</td><td class="v5"></td><td class="v6"><span class="opc">$58</span>CLI impl</td><td class="v7"></td></tr>
+<tr class="r1"><td class="c c1">1</td><td class="v0"><span class="opc">$41</span>EOR X,ind</td><td class="v1"><span class="opc">$45</span>EOR zpg</td><td class="v2"><span class="opc">$49</span>EOR  #</td><td class="v3"><span class="opc">$4D</span>EOR abs</td><td class="v4"><span class="opc">$51</span>EOR ind,Y</td><td class="v5"><span class="opc">$55</span>EOR zpg,X</td><td class="v6"><span class="opc">$59</span>EOR abs,Y</td><td class="v7"><span class="opc">$5D</span>EOR abs,X</td></tr>
+<tr class="r2"><td class="c c2">2</td><td class="v0"></td><td class="v1"><span class="opc">$46</span>LSR zpg</td><td class="v2"><span class="opc">$4A</span>LSR  A</td><td class="v3"><span class="opc">$4E</span>LSR abs</td><td class="v4"></td><td class="v5"><span class="opc">$56</span>LSR zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$5E</span>LSR abs,X</td></tr>
+<tr class="r0 g-first r-odd"><td rowspan="3" class="a a-b">3</td><td class="c c0">0</td><td class="v0"><span class="opc">$60</span>RTS impl</td><td class="v1"></td><td class="v2"><span class="opc">$68</span>PLA impl</td><td class="v3"><span class="opc">$6C</span>JMP ind</td><td class="v4"><span class="opc">$70</span>BVS rel</td><td class="v5"></td><td class="v6"><span class="opc">$78</span>SEI impl</td><td class="v7"></td></tr>
+<tr class="r1"><td class="c c1">1</td><td class="v0"><span class="opc">$61</span>ADC X,ind</td><td class="v1"><span class="opc">$65</span>ADC zpg</td><td class="v2"><span class="opc">$69</span>ADC  #</td><td class="v3"><span class="opc">$6D</span>ADC abs</td><td class="v4"><span class="opc">$71</span>ADC ind,Y</td><td class="v5"><span class="opc">$75</span>ADC zpg,X</td><td class="v6"><span class="opc">$79</span>ADC abs,Y</td><td class="v7"><span class="opc">$7D</span>ADC abs,X</td></tr>
+<tr class="r2 t-half-top"><td class="c c2">2</td><td class="v0"></td><td class="v1"><span class="opc">$66</span>ROR zpg</td><td class="v2"><span class="opc">$6A</span>ROR  A</td><td class="v3"><span class="opc">$6E</span>ROR abs</td><td class="v4"></td><td class="v5"><span class="opc">$76</span>ROR zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$7E</span>ROR abs,X</td></tr>
+<tr class="r0 g-first r-even t-half-bottom"><td rowspan="3" class="a a-b">4</td><td class="c c0">0</td><td class="v0"></td><td class="v1"><span class="opc">$84</span>STY zpg</td><td class="v2"><span class="opc">$88</span>DEY impl</td><td class="v3"><span class="opc">$8C</span>STY abs</td><td class="v4"><span class="opc">$90</span>BCC rel</td><td class="v5"><span class="opc">$94</span>STY zpg,X</td><td class="v6"><span class="opc">$98</span>TYA impl</td><td class="v7"></td></tr>
+<tr class="r1"><td class="c c1">1</td><td class="v0"><span class="opc">$81</span>STA X,ind</td><td class="v1"><span class="opc">$85</span>STA zpg</td><td class="v2"></td><td class="v3"><span class="opc">$8D</span>STA abs</td><td class="v4"><span class="opc">$91</span>STA ind,Y</td><td class="v5"><span class="opc">$95</span>STA zpg,X</td><td class="v6"><span class="opc">$99</span>STA abs,Y</td><td class="v7"><span class="opc">$9D</span>STA abs,X</td></tr>
+<tr class="r2"><td class="c c2">2</td><td class="v0"></td><td class="v1"><span class="opc">$86</span>STX zpg</td><td class="v2"><span class="opc">$8A</span>TXA impl</td><td class="v3"><span class="opc">$8E</span>STX abs</td><td class="v4"></td><td class="v5"><span class="opc">$96</span>STX zpg,Y</td><td class="v6"><span class="opc">$9A</span>TXS impl</td><td class="v7"></td></tr>
+<tr class="r0 g-first r-odd"><td rowspan="3" class="a a-b">5</td><td class="c c0">0</td><td class="v0"><span class="opc">$A0</span>LDY  #</td><td class="v1"><span class="opc">$A4</span>LDY zpg</td><td class="v2"><span class="opc">$A8</span>TAY impl</td><td class="v3"><span class="opc">$AC</span>LDY abs</td><td class="v4"><span class="opc">$B0</span>BCS rel</td><td class="v5"><span class="opc">$B4</span>LDY zpg,X</td><td class="v6"><span class="opc">$B8</span>CLV impl</td><td class="v7"><span class="opc">$BC</span>LDY abs,X</td></tr>
+<tr class="r1"><td class="c c1">1</td><td class="v0"><span class="opc">$A1</span>LDA X,ind</td><td class="v1"><span class="opc">$A5</span>LDA zpg</td><td class="v2"><span class="opc">$A9</span>LDA  #</td><td class="v3"><span class="opc">$AD</span>LDA abs</td><td class="v4"><span class="opc">$B1</span>LDA ind,Y</td><td class="v5"><span class="opc">$B5</span>LDA zpg,X</td><td class="v6"><span class="opc">$B9</span>LDA abs,Y</td><td class="v7"><span class="opc">$BD</span>LDA abs,X</td></tr>
+<tr class="r2"><td class="c c2">2</td><td class="v0"><span class="opc">$A2</span>LDX  #</td><td class="v1"><span class="opc">$A6</span>LDX zpg</td><td class="v2"><span class="opc">$AA</span>TAX impl</td><td class="v3"><span class="opc">$AE</span>LDX abs</td><td class="v4"></td><td class="v5"><span class="opc">$B6</span>LDX zpg,Y</td><td class="v6"><span class="opc">$BA</span>TSX impl</td><td class="v7"><span class="opc">$BE</span>LDX abs,Y</td></tr>
+<tr class="r0 g-first r-even"><td rowspan="3" class="a a-b">6</td><td class="c c0">0</td><td class="v0"><span class="opc">$C0</span>CPY  #</td><td class="v1"><span class="opc">$C4</span>CPY zpg</td><td class="v2"><span class="opc">$C8</span>INY impl</td><td class="v3"><span class="opc">$CC</span>CPY abs</td><td class="v4"><span class="opc">$D0</span>BNE rel</td><td class="v5"></td><td class="v6"><span class="opc">$D8</span>CLD impl</td><td class="v7"></td></tr>
+<tr class="r1"><td class="c c1">1</td><td class="v0"><span class="opc">$C1</span>CMP X,ind</td><td class="v1"><span class="opc">$C5</span>CMP zpg</td><td class="v2"><span class="opc">$C9</span>CMP  #</td><td class="v3"><span class="opc">$CD</span>CMP abs</td><td class="v4"><span class="opc">$D1</span>CMP ind,Y</td><td class="v5"><span class="opc">$D5</span>CMP zpg,X</td><td class="v6"><span class="opc">$D9</span>CMP abs,Y</td><td class="v7"><span class="opc">$DD</span>CMP abs,X</td></tr>
+<tr class="r2"><td class="c c2">2</td><td class="v0"></td><td class="v1"><span class="opc">$C6</span>DEC zpg</td><td class="v2"><span class="opc">$CA</span>DEX impl</td><td class="v3"><span class="opc">$CE</span>DEC abs</td><td class="v4"></td><td class="v5"><span class="opc">$D6</span>DEC zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$DE</span>DEC abs,X</td></tr>
+<tr class="r0 g-first r-odd"><td rowspan="3" class="a a-b">7</td><td class="c c0">0</td><td class="v0"><span class="opc">$E0</span>CPX  #</td><td class="v1"><span class="opc">$E4</span>CPX zpg</td><td class="v2"><span class="opc">$E8</span>INX impl</td><td class="v3"><span class="opc">$EC</span>CPX abs</td><td class="v4"><span class="opc">$F0</span>BEQ rel</td><td class="v5"></td><td class="v6"><span class="opc">$F8</span>SED impl</td><td class="v7"></td></tr>
+<tr class="r1"><td class="c c1">1</td><td class="v0"><span class="opc">$E1</span>SBC X,ind</td><td class="v1"><span class="opc">$E5</span>SBC zpg</td><td class="v2"><span class="opc">$E9</span>SBC  #</td><td class="v3"><span class="opc">$ED</span>SBC abs</td><td class="v4"><span class="opc">$F1</span>SBC ind,Y</td><td class="v5"><span class="opc">$F5</span>SBC zpg,X</td><td class="v6"><span class="opc">$F9</span>SBC abs,Y</td><td class="v7"><span class="opc">$FD</span>SBC abs,X</td></tr>
+<tr class="r2"><td class="c c2">2</td><td class="v0"></td><td class="v1"><span class="opc">$E6</span>INC zpg</td><td class="v2"><span class="opc">$EA</span>NOP impl</td><td class="v3"><span class="opc">$EE</span>INC abs</td><td class="v4"></td><td class="v5"><span class="opc">$F6</span>INC zpg,X</td><td class="v6"></td><td class="v7"><span class="opc">$FE</span>INC abs,X</td></tr>
+</tbody>
+</table>
+</div>
+<br>
+
+<h2 id="family">APENDIX D: The 65xx-Family:</h2>
+<pre>  Type               Features, Comments 
+  -------------------------------------
+  6502               NMOS, 16 bit address bus, 8 bit data bus
+  6502A              accelerated version of 6502
+  6502C              accelerated version of 6502, CMOS
+  65C02              16 bit version, additional instructions and address modes
+  6503, 6505, 6506   12 bit address bus [4 KiB]
+  6504               13 bit address bus [8 KiB]
+  6507               13 bit address bus [8 KiB], no interrupts
+  6509               20 bit address bus [1 MiB] by bankswitching
+  6510               as 6502 with additional 6 bit I/O-port
+  6511               integrated micro controler with I/O-port, serial interface, and RAM (Rockwell)
+  65F11              as 6511, integrated FORTH interpreter
+  7501               as 6502, HMOS
+  8500               as 6510, CMOS
+  8502               as 6510 with switchable 2 MHz option, 7 bit I/O-port
+  65816 (65C816)     16 bit registers and ALU, 24 bit address bus [16 MiB], up to 24 MHz (Western Design Center)
+  65802 (65C802)     as 65816, pin compatible to 6502, 64 KiB address bus, up to 16 MHz
+</pre>
+<p>&nbsp;</p>
+<p>Disclaimer:<br>Errors excepted. The information is provided for free and AS IS, therefore without any warranty;<br>without even the implied warranty of merchantability or fitness for a particular purpose.</p>
+<p>&nbsp;</p>
+
+<p>See also:<br>
+&gt;&gt; <a href="https://www.masswerk.at/6502/index.html" target="virtual6502" onclick="if (this.blur) this.blur()">Virtual 6502</a> (6502/6510 emulator)<br>
+&gt;&gt; <a href="https://www.masswerk.at/6502/assembler.html" target="assembler6502" onclick="if (this.blur) this.blur()">6502 Assembler</a><br>
+&gt;&gt; <a href="https://www.masswerk.at/6502/disassembler.html" target="dissasembler6502" onclick="if (this.blur) this.blur()">6502 Disassembler</a><br>
+&nbsp;</p>
+
+<p>External Links:<br>
+&gt;&gt; <a href="http://6502.org/">6502.org</a> — the 6502 microprocessor resource<br>
+&gt;&gt; <a href="http://www.visual6502.org/">visual6502.org</a> — visual transistor-level simulation of the 6502 CPU<br>
+&gt;&gt; <a href="https://www.westerndesigncenter.com/wdc/">The Western Design Center, Inc.</a> — designers of the 6502 (still thriving)</p>
+<p>&nbsp;</p>
+
+<p>Presented by <a href="https://www.masswerk.at/6502/" target="_blank">virtual 6502</a>, <a href="https://masswerk.at/" target="_blank">mass:werk</a>.</p>
+
+</body></html>
