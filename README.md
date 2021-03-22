@@ -1,0 +1,2 @@
+# NesX
+my nes project
