@@ -4,7 +4,7 @@
 
 #include "Common.h"
 #include "Snapshots/MainBoardSnapshot.h"
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 class CMonitor;
 class CCartridge;

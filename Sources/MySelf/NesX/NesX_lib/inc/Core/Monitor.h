@@ -2,7 +2,7 @@
 #ifndef NESX_NESX_LIB_INC_CORE_MONITOR_H_
 #define NESX_NESX_LIB_INC_CORE_MONITOR_H_
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 class CMonitor
 {

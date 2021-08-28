@@ -6,13 +6,15 @@ my nes project
 
 > 可以使用Clion来进行编译和调试(可参考 https://lazyfoo.net/tutorials/SDL/01_hello_SDL/index.php 进行不同平台SDL的配置)
 
-> 命令行编译需要安装cmake (我这里的版本号是 3.20.5)
-
 #### Windows (MinGW)
 1. 安装 msys2 (https://www.msys2.org/) 并按照网站的 `Installation` 下的指引完成环境的初始化
 2. 打开 MSYS2 MinGW 64-bit 安装SDL2库
 ```bash
 pacman -S mingw-w64-x86_64-SDL2 --noconfirm
+```
+3. 安装cmake (使用MSYS Makefiles)
+```bash
+pacman -S mingw-w64-x86_64-cmake --noconfirm
 ```
 
 > 使用Clion需要将MinGW配置到Toolchains中去(还需要gdb)
@@ -45,6 +47,8 @@ cd build
 ```bash
 make
 ```
+
+> 单独运行程序要求 SDL2.dll, libstdc++-6.dll, libgcc_s_seh-1.dll 动态库和exe在相同目录下
 
 > 删除build目录就可以清除cmake,make产生的所有文件
 

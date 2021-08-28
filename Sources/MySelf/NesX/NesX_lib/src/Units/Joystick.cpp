@@ -1,6 +1,6 @@
 
 #include "Units/Joystick.h"
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 CJoystick::CJoystick()
     : m_bStrobe(false),

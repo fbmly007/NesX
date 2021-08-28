@@ -3,7 +3,7 @@
 #define NESX_NESX_LIB_INC_CORE_NESXFRAME_H_
 
 #include "Common.h"
-#include <SDL.h>
+#include <SDL2/SDL.h>
 
 class CMonitor;
 class CMainBoard;

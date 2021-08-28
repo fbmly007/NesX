@@ -1,7 +1,7 @@
 
 #include "Core/Monitor.h"
 #include "Common.h"
-#include <SDL_render.h>
+#include <SDL2/SDL_render.h>
 
 CMonitor::CMonitor()
         : m_pRenderer(nullptr),
