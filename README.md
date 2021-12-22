@@ -31,6 +31,7 @@ pacman -S mingw-w64-x86_64-cmake --noconfirm
 
 其他环境可参考 
 https://lazyfoo.net/tutorials/SDL/01_hello_SDL/ 来安装SDL2
+
 https://cmake.org/documentation/ 来安装cmake(也可以通过不同平台的包管理来安装)
 
 ### 编译
@@ -114,7 +115,7 @@ cmake -S . -B build
 
 ![炸弹人](Pictures/0.png)![松鼠大作战](Pictures/1.png)![赤色要塞](Pictures/2.png)
 
-![冒险岛4](Pictures/3.png)![忍者龙剑传3](Pictures/4.png)![超惑星战记](Pictures/4.png)
+![冒险岛4](Pictures/3.png)![忍者龙剑传3](Pictures/4.png)![超惑星战记](Pictures/5.png)
 
 ### 参考资料
 
