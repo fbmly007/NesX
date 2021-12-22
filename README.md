@@ -19,13 +19,19 @@ pacman -S mingw-w64-x86_64-cmake --noconfirm
 
 > 使用Clion需要将MinGW配置到Toolchains中去(还需要gdb)
 
-#### Linux
+#### 其他平台(Linux/Unix/Mac)
 
-> TODO
+> ubuntu平台可以使用如下命令安装
+>
+> ```shell
+> sudo apt-get install libsdl2-2.0
+> sudo apt-get install libsdl2-dev
+> sudo apt-get install cmake
+> ```
 
-#### Mac
-
-> TODO
+其他环境可参考 
+https://lazyfoo.net/tutorials/SDL/01_hello_SDL/ 来安装SDL2
+https://cmake.org/documentation/ 来安装cmake(也可以通过不同平台的包管理来安装)
 
 ### 编译
 
@@ -52,13 +58,18 @@ make
 
 > 删除build目录就可以清除cmake,make产生的所有文件
 
-#### Linux
+#### 其他平台
 
-> TODO
+> 因为使用cmake, 所以和Windows平台类似, 只是在构建时使用如下命令
 
-#### Mac
+```shell
+cmake -S . -G "Unix Makefiles" -B build
+```
+> 或使用默认的Generators
 
-> TODO
+```shell
+cmake -S . -B build
+```
 
 ### 已测试游戏(Mapper 0~4)
 1. 炸弹人
@@ -101,11 +112,9 @@ make
 
 ### 相关截图
 
-> TODO
+![炸弹人](Pictures/0.png)![松鼠大作战](Pictures/1.png)![赤色要塞](Pictures/2.png)
 
-### 问题总结
-
-> TODO
+![冒险岛4](Pictures/3.png)![忍者龙剑传3](Pictures/4.png)![超惑星战记](Pictures/4.png)
 
 ### 参考资料
 
@@ -116,3 +125,45 @@ https://fms.komkon.org/EMUL8/HOWTO.html
 https://fms.komkon.org/EMUL8/NES.html
 
 https://patater.com/gbaguy/nesasm.htm
+
+https://fms.komkon.org
+
+https://www.zophar.net
+
+http://emuprog.free.fr (法)
+
+https://www.emuparadise.me
+
+https://gamefaqs.gamespot.com/nes/916386-nes/faqs/2949
+
+https://www.cnblogs.com/memset/archive/2012/07/18/everynes_nes_specifications.html
+
+http://nemulator.com/files/nes_emu.txt
+
+https://medium.com/@bokuweb17/writing-an-nes-emulator-with-rust-and-webassembly-d64de101c49d
+
+http://www.dustmop.io/blog/2015/04/28/nes-graphics-part-1 (*)
+
+https://github.com/AndreaOrru/LaiNES
+
+https://github.com/aaronmell/6502Net
+
+https://www.qmtpro.com/~nes/nintendulator/
+
+http://www.chrismcovell.com/NESTechFAQ.html
+
+http://content.atalasoft.com/atalasoft-blog/why-writing-an-emulator-is-fun-and-why-you-should-too
+
+http://emulation.gametechwiki.com/index.php/Overclocking
+
+https://codebase64.org/doku.php?id=base:6502_6510_coding
+
+https://www.masswerk.at/6502/6502_instruction_set.html
+
+http://www.my-testsite.co.uk/sites/cc/6502.html
+
+http://nparker.llx.com/a2/index.html
+
+http://nesdev.com/6502.txt
+
+https://en.wikipedia.org/wiki/Frequency
