@@ -18,6 +18,7 @@ pacman -S mingw-w64-x86_64-cmake --noconfirm
 ```
 
 > 使用Clion需要将MinGW配置到Toolchains中去(还需要gdb)
+> 使用Clion需要将Working Directory配置为 `$PROJECT_DIR$/Resources`, 否则无法加载游戏
 
 #### 其他平台(Linux/Unix/Mac)
 
@@ -113,9 +114,9 @@ cmake -S . -B build
 
 ### 相关截图
 
-![炸弹人](Pictures/0.png)![松鼠大作战](Pictures/1.png)![赤色要塞](Pictures/2.png)
+![炸弹人](http://ys-n.ysepan.com/612052426/419597419/n4856354JFTQJjjermJdf/0.png)![松鼠大作战](http://ys-n.ysepan.com/612052426/419597420/n4856354JFTQKjjermJae/1.png)![赤色要塞](http://ys-n.ysepan.com/612052427/419597421/jjermJp8735546FGXPJ92/2.png)
 
-![冒险岛4](Pictures/3.png)![忍者龙剑传3](Pictures/4.png)![超惑星战记](Pictures/5.png)
+![冒险岛4](http://ys-n.ysepan.com/612052427/419597422/jjermJp8735546FGXPKe2/3.png)![忍者龙剑传3](http://ys-n.ysepan.com/612052428/419597423/s7527462GKWNKjjermJba/4.png)![超惑星战记](http://ys-n.ysepan.com/612052428/419597424/s7527462GKWNTjjermJb1/5.png)
 
 ### 参考资料
 
@@ -143,7 +144,7 @@ http://nemulator.com/files/nes_emu.txt
 
 https://medium.com/@bokuweb17/writing-an-nes-emulator-with-rust-and-webassembly-d64de101c49d
 
-http://www.dustmop.io/blog/2015/04/28/nes-graphics-part-1 (*)
+http://www.dustmop.io/blog/2015/04/28/nes-graphics-part-1 (\*)
 
 https://github.com/AndreaOrru/LaiNES
 

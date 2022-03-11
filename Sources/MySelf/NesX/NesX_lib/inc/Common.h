@@ -8,15 +8,15 @@
 typedef uint32_t Address;
 
 // 屏幕宽与高
-#define WINDOW_WIDTH 1024
-#define WINDOW_HEIGHT 768
+#define WINDOW_WIDTH 256
+#define WINDOW_HEIGHT 240
 
 // NES的宽与高
 #define NES_SCREEN_WIDTH 256
 #define NES_SCREEN_HEIGHT 240
 
-#define SAFE_RELEASE(p) if (p) { delete p; p = nullptr; }
-#define SAFE_ARRAY_RELEASE(p) if(p) { delete[] p; p = nullptr; }
+#define SAFE_RELEASE(p) if (p) { delete (p); (p) = nullptr; }
+#define SAFE_ARRAY_RELEASE(p) if(p) { delete[] (p); (p) = nullptr; }
 
 // CPU中断向量
 #define NMI_INT_HANDLER     0xFFFAu

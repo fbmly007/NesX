@@ -127,14 +127,14 @@ void CJoystick::RefreshJoystick1()
 
     // Down
     //if(!m_PadStates1[4])
-        m_PadStates1[5] = SDL_GetKeyboardState(nullptr)[SDL_Scancode::SDL_SCANCODE_S] & 1u;
+    m_PadStates1[5] = SDL_GetKeyboardState(nullptr)[SDL_Scancode::SDL_SCANCODE_S] & 1u;
 
     // Left
     m_PadStates1[6] = SDL_GetKeyboardState(nullptr)[SDL_Scancode::SDL_SCANCODE_A] & 1u;
 
     // Right
     //if(!m_PadStates1[6])
-        m_PadStates1[7] = SDL_GetKeyboardState(nullptr)[SDL_Scancode::SDL_SCANCODE_D] & 1u;
+    m_PadStates1[7] = SDL_GetKeyboardState(nullptr)[SDL_Scancode::SDL_SCANCODE_D] & 1u;
 }
 
 void CJoystick::RefreshJoystick2()
