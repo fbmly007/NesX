@@ -17,8 +17,7 @@ pacman -S mingw-w64-x86_64-SDL2 --noconfirm
 pacman -S mingw-w64-x86_64-cmake --noconfirm
 ```
 
-> 使用Clion需要将MinGW配置到Toolchains中去(还需要gdb)
-> 使用Clion需要将Working Directory配置为 `$PROJECT_DIR$/Resources`, 否则无法加载游戏
+> 使用Clion需要将MinGW配置到Toolchains中去(还需要gdb), 还需要将Working Directory配置为 `$PROJECT_DIR$/Resources`, 否则无法加载游戏
 
 #### 其他平台(Linux/Unix/Mac)
 
