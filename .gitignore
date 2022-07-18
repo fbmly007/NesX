@@ -30,3 +30,4 @@ Thumbs.db
 cmake
 ============
 cmake-build-*/
+.idea
