@@ -1,4 +1,4 @@
-
+﻿
 // Blip_Synth and Blip_Wave are waveform transition synthesizers for adding
 // waveforms to a Blip_Buffer.
 

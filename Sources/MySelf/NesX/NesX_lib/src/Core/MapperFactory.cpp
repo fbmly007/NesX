@@ -1,4 +1,4 @@
-
+﻿
 #include "Core/MapperFactory.h"
 
 #include "Mappers/Mapper000.h"

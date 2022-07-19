@@ -1,4 +1,4 @@
-
+﻿
 // Private oscillators used by Nes_Apu
 
 // Nes_Snd_Emu 0.1.7. Copyright (C) 2003-2005 Shay Green. GNU LGPL license.

@@ -1,10 +1,10 @@
-
+﻿
 #ifndef NESX_NESX_LIB_INC_UNITS_MAINBOARD_H
 #define NESX_NESX_LIB_INC_UNITS_MAINBOARD_H
 
 #include "Common.h"
 #include "Snapshots/MainBoardSnapshot.h"
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 class CMonitor;
 class CCartridge;

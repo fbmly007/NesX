@@ -1,4 +1,4 @@
-
+﻿
 // Blip_Buffer 0.3.3. http://www.slack.net/~ant/libs/
 
 #include "Multi_Buffer.h"

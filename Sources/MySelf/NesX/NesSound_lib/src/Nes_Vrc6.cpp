@@ -1,4 +1,4 @@
-
+﻿
 // Nes_Snd_Emu 0.1.7. http://www.slack.net/~ant/libs/
 
 #include "Nes_Vrc6.h"

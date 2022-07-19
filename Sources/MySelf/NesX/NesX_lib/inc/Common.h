@@ -1,8 +1,9 @@
-
+﻿
 #ifndef NESX_NESX_LIB_INC_UNITS_COMMON_H_
 #define NESX_NESX_LIB_INC_UNITS_COMMON_H_
 
 #include <cstdint>
+#include <cstring>
 #include "Config.h"
 
 typedef uint32_t Address;

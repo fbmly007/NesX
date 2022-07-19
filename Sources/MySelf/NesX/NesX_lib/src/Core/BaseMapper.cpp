@@ -1,5 +1,4 @@
-
-#include "Core/BaseMapper.h"
+﻿#include "Core/BaseMapper.h"
 #include "Core/NesHeader.h"
 #include <cassert>
 #include <cstring>
@@ -123,25 +122,19 @@ Address CBaseMapper::NameTableMirroring(const Address &address)
 
 uint8_t CBaseMapper::ReadPRG(const Address &address)
 {
-    switch(address)
-    {
-        // TODO: Registers for APU and Expanded ROM
-        case 0x4018u ... 0x5FFFu: break;
+	// if(address >= 0x4018u && address <= 0x5FFFu)
 
-        // SRAM
-        case 0x6000u ... 0x7FFFu:
-            if(m_bSRAMEnabled)
-            {
-                return m_SRAM[address & 0x1FFFu];
-            }
-            break;
+	// SRAM
+	if (address >= 0x6000u && address <= 0x7FFFu && m_bSRAMEnabled)
+	{
+		return m_SRAM[address & 0x1FFFu];
+	}
 
-        // PRG-ROM [0x8000, 0xFFFF]
-        case 0x8000u ... 0xFFFFu:
-            return m_pPRGBanks[(address >> 13u) & 3u][address & 0x1FFFu];
-
-        default: break;
-    }
+	// PRG-ROM [0x8000, 0xFFFF]
+	if (address >= 0x8000u && address <= 0xFFFFu)
+	{
+		return m_pPRGBanks[(address >> 13u) & 3u][address & 0x1FFFu];
+	}
 
     // cpu open bus
     return (address >> 8u) & 0xFFu;

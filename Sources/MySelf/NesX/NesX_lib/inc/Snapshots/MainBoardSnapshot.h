@@ -1,8 +1,8 @@
-
+﻿
 #ifndef NESX_NESX_LIB_INC_SNAPSHOTS_MAINBOARDSNAPSHOT_H_
 #define NESX_NESX_LIB_INC_SNAPSHOTS_MAINBOARDSNAPSHOT_H_
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 #include "apu_snapshot.h"
 #include "CPUSnapshot.h"
 #include "PPUSnapshot.h"

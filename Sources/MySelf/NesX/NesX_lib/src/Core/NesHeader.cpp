@@ -1,4 +1,4 @@
-
+﻿
 #include <Core/NesHeader.h>
 
 CNesHeader::CNesHeader()

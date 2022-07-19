@@ -1,4 +1,4 @@
-
+﻿
 // By default, #included at beginning of library source files
 
 // Copyright (C) 2005 Shay Green.

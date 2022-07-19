@@ -1,4 +1,4 @@
-
+﻿
 // Buffer of sound samples into which band-limited waveforms can be synthesized
 // using Blip_Wave or Blip_Synth.
 

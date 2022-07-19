@@ -1,4 +1,4 @@
-
+﻿
 #ifndef NESX_NESX_LIB_INC_UNITS_PPU_H_
 #define NESX_NESX_LIB_INC_UNITS_PPU_H_
 
@@ -163,8 +163,8 @@ private:
   uint8_t m_uBGActivedAttributeDataH;
 
   // 当前所使用的属性锁存器(每个是1 bit)
-  bool m_uBGNextAttributeLatchL;
-  bool m_uBGNextAttributeLatchH;
+  uint8_t m_uBGNextAttributeLatchL;
+  uint8_t m_uBGNextAttributeLatchH;
 
   // 下一个图块的8个像素
   uint8_t m_uBGNextPatternDataL;

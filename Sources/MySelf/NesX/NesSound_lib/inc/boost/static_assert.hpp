@@ -1,4 +1,4 @@
-
+﻿
 // Boost substitute. For full boost library see http://boost.org
 
 #ifndef BOOST_STATIC_ASSERT_HPP

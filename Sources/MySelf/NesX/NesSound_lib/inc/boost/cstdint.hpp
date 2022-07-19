@@ -1,8 +1,10 @@
-
+﻿
 // Boost substitute. For full boost library see http://boost.org
 
 #ifndef BOOST_CSTDINT_HPP
 #define BOOST_CSTDINT_HPP
+
+#if !defined (_MSC_VER)
 
 #if BLARGG_USE_NAMESPACE
 	#include <climits>
@@ -37,6 +39,10 @@ typedef unsigned short  uint16_t;
 #endif
 
 BLARGG_END_NAMESPACE
+
+#else
+#include <cstdint>
+#endif
 
 #endif
 

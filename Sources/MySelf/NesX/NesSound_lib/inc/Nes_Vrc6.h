@@ -1,4 +1,4 @@
-
+﻿
 // Konami VRC6 sound chip emulator
 
 // Nes_Snd_Emu 0.1.7. Copyright (C) 2003-2005 Shay Green. GNU LGPL license.

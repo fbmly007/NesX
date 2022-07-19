@@ -1,4 +1,4 @@
-
+﻿
 // Sets up common environment for Shay Green's libraries.
 //
 // Don't modify this file directly; #define HAVE_CONFIG_H and put your
@@ -41,6 +41,10 @@
 	#if _MSC_VER < 1100
 		#define BLARGG_COMPILER_HAS_BOOL 0
 	#endif
+
+	// for vs
+	#include <new>
+	#define BLARGG_NEW new (std::nothrow)
 
 #elif defined (__GNUC__)
 	// GNU C++

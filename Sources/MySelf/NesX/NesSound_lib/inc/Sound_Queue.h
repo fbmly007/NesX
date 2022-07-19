@@ -1,4 +1,4 @@
-
+﻿
 // Simple sound queue for synchronous sound handling in SDL
 
 // Copyright (C) 2005 Shay Green. MIT license.
@@ -6,7 +6,7 @@
 #ifndef SOUND_QUEUE_H
 #define SOUND_QUEUE_H
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 // Simple SDL sound wrapper that has a synchronous interface
 class Sound_Queue {

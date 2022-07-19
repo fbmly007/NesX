@@ -1,4 +1,4 @@
-
+﻿
 // Multi-channel sound buffer interface, and basic mono and stereo buffers
 
 // Blip_Buffer 0.3.3. Copyright (C) 2003-2005 Shay Green. GNU LGPL license.

@@ -1,4 +1,4 @@
-
+﻿
 #ifndef NESX_NESX_LIB_INC_SNAPSHOTS_PPUSNAPSHOT_H_
 #define NESX_NESX_LIB_INC_SNAPSHOTS_PPUSNAPSHOT_H_
 
@@ -54,8 +54,8 @@ struct PPUSnapshot
     uint8_t bgActivedAttributeDataH;
 
     // 当前所使用的属性锁存器(每个是1 bit)
-    bool bgNextAttributeLatchL;
-    bool bgNextAttributeLatchH;
+    uint8_t bgNextAttributeLatchL;
+	uint8_t bgNextAttributeLatchH;
 
     // 下一个图块的8个像素
     uint8_t bgNextPatternDataL;

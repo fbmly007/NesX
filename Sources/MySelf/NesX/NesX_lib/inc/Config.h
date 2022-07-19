@@ -1,4 +1,4 @@
-
+﻿
 #ifndef NESX_CONFIG_H
 #define NESX_CONFIG_H
 

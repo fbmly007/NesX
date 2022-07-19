@@ -1,4 +1,4 @@
-
+﻿
 #include "Units/CPU.h"
 #include "Units/MainBoard.h"
 #include "Common.h"
@@ -14,8 +14,6 @@ CCPU::CCPU()
           A(0u),
           X(0u),
           Y(0u),
-          SR{ .Value = 0u },
-          PC{ .D = 0u },
           SP(0u),
           m_bNMI(false),
           m_bIRQ(false),
@@ -23,6 +21,8 @@ CCPU::CCPU()
           m_uCountOfWrite(0),
           m_bCycleOdd(true)
 {
+	SR.Value = 0u;
+	PC.D = 0u;
 }
 
 CCPU::~CCPU()
@@ -381,78 +381,88 @@ void CCPU::ExecuteDMA(const uint8_t& data)
 uint8_t CCPU::Read(const Address &address)
 {
     ++m_nCyclesToWait;
-    switch (address)
-    {
-        // 自身2KB内存
-        case 0x0000u ... 0x1FFFu:
-            return m_InternalRAM[address & 0x7FFu];
 
-            // PPU 端口
-        case 0x2000u ... 0x3FFFu:
-            return m_pRefMainBoard->PPURead(address & 0x7u);
+	// 自身2KB内存
+	if (address >= 0x0000u && address <= 0x1FFFu)
+	{
+		return m_InternalRAM[address & 0x7FFu];
+	}
 
-            // DMA??????
-        case 0x4014u:
-            // nothing
-            break;
+	// PPU 端口
+	if (address >= 0x2000u && address <= 0x3FFFu)
+	{
+		return m_pRefMainBoard->PPURead(address & 0x7u);
+	}
 
-            // Joystick 1
-        case 0x4016u:
-            return m_pRefMainBoard->JoystickRead(1);
+	// DMA
+	if (address == 0x4014u)
+	{
+		// cpu open bus
+		return (address >> 8u) & 0xFFu;
+	}
 
-            // Joystick 2
-        case 0x4017u:
-            return m_pRefMainBoard->JoystickRead(2);
+	// Joystick 1
+	if (address == 0x4016u)
+	{
+		return m_pRefMainBoard->JoystickRead(1);
+	}
 
-            // APU
-        case 0x4015u:
-        case 0x4000u ... 0x4013u:
-            return m_pRefMainBoard->APURead(address);
+	// Joystick 2
+	if (address == 0x4017u)
+	{
+		return m_pRefMainBoard->JoystickRead(2);
+	}
 
-            // Mapper (0x00004018 ~ ........)
-        default:
-            return m_pRefMainBoard->CartridgeReadPRG(address);
-    }
-
-    // cpu open bus
-    return (address >> 8u) & 0xFFu;
+	// APU (不算0x4014)
+	if (address >= 0x4000u && address <= 0x4015u)
+	{
+		return m_pRefMainBoard->APURead(address);
+	}
+	
+	// Mapper (0x00004018 ~ ........)
+	return m_pRefMainBoard->CartridgeReadPRG(address);
 }
 
 bool CCPU::Write(const Address &address, const uint8_t &data)
 {
     ++m_nCyclesToWait;
     ++m_uCountOfWrite;
-    switch (address)
-    {
-        // 自身2KB内存
-        case 0x0000u ... 0x1FFFu:
-            m_InternalRAM[address & 0x7FFu] = data;
-            return true;
 
-            // PPU 端口
-        case 0x2000u ... 0x3FFFu:
-            return m_pRefMainBoard->PPUWrite(address & 0x7u, data);
+	// 自身2KB内存
+	if (address >= 0x0000u && address <= 0x1FFFu)
+	{
+		m_InternalRAM[address & 0x7FFu] = data;
+		return true;
+	}
 
-        // DMA
-        case 0x4014u:
-            ExecuteDMA(data);
-            return true;
+	// PPU 端口
+	if (address >= 0x2000u && address <= 0x3FFFu)
+	{
+		return m_pRefMainBoard->PPUWrite(address & 0x7u, data);
+	}
 
-        // Joystick strobe
-        case 0x4016u:
-            m_pRefMainBoard->JoystickStrobe(data);
-            return true;
+	// DMA
+	if (address == 0x4014u)
+	{
+		ExecuteDMA(data);
+		return true;
+	}
 
-        // APU
-        case 0x4015u:
-        case 0x4017u:
-        case 0x4000u ... 0x4013u:
-            return m_pRefMainBoard->APUWrite(address, data);
+	// Joystick strobe
+	if (address == 0x4016u)
+	{
+		m_pRefMainBoard->JoystickStrobe(data);
+		return true;
+	}
+	
+	// APU (已不会匹配 0x4014u和0x4016u)
+	if (address >= 0x4000u && address <= 0x4017u)
+	{
+		return m_pRefMainBoard->APUWrite(address, data);
+	}
 
-            // Mapper (4018~FFFF)
-        default:
-            return m_pRefMainBoard->CartridgeWritePRG(address, data);
-    }
+	// Mapper (4018~FFFF)
+	return m_pRefMainBoard->CartridgeWritePRG(address, data);
 }
 
 void CCPU::Push(uint8_t value)
@@ -662,7 +672,8 @@ void CCPU::BIT(AddressModeFunc pFunc)
 {
     // A AND M, M7 -> N, M6 -> V (N Z V)
     GM;
-    Flags flags{.Value = m};
+	Flags flags;
+	flags.Value = m;
     SR.V = flags.V;
     SR.N = flags.N;
     UpdateZ(m & A);
@@ -782,7 +793,8 @@ void CCPU::JMP(AddressModeFunc pFunc)
 void CCPU::JSR()
 {
     CLK;
-    DataReg r{.D = 0};
+	DataReg r;
+	r.D = 0u;
     // 将JSR第二个操作数所在的地址 Push到栈中(先push高字节)
     r.W = PC.W + 1u;
     Push(r.WH);

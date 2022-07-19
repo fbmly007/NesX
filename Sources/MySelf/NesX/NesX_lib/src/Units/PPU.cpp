@@ -1,4 +1,4 @@
-
+﻿
 #include "Units/PPU.h"
 #include "Units/MainBoard.h"
 #include "Core/Monitor.h"
@@ -24,9 +24,7 @@ CPPU::CPPU()
     : m_pRefMonitor(nullptr),
       m_uLastOpenBus(0u),
 
-      m_Reg0{.Value = 0},
-      m_Reg1{.Value = 0},
-      m_Reg2{.Value = 0},
+      
       m_uOAMAddr(0u),
       m_Reg6(0u),
 
@@ -71,6 +69,9 @@ CPPU::CPPU()
       m_uColorEmphasis(0u),
       m_uGrayScale(0u)
 {
+	m_Reg0.Value = 0;
+	m_Reg1.Value = 0;
+	m_Reg2.Value = 0;
 }
 
 CPPU::~CPPU()
@@ -328,47 +329,50 @@ void CPPU::DMA(uint8_t **pOAM, uint8_t& uOAMAddr)
 
 uint8_t CPPU::Read(const Address &address)
 {
-    switch(address)
-    {
-        // Pattern
-        case 0x0000u ... 0x1FFFu:
-            return m_pRefMainBoard->CartridgeReadCHR(address);
+	// Pattern
+	if (address >= 0x0000u && address <= 0x1FFFu)
+	{
+		return m_pRefMainBoard->CartridgeReadCHR(address);
+	}
 
-        // Name Table
-        case 0x2000u ... 0x2FFFu:
-        case 0x3000u ... 0x3EFFu:
-            return m_NameTables[m_pRefMainBoard->CartridgeNameTableMirroring(address)];
+	// Name Table
+	if (address >= 0x2000u && address <= 0x3EFFu)
+	{
+		return m_NameTables[m_pRefMainBoard->CartridgeNameTableMirroring(address)];
+	}
 
-        // Palette
-        case 0x3F00u ... 0x3FFFu:
-            return m_uLastOpenBus = ReadPalette(address);
+	// Palette
+	if (address >= 0x3F00u && address <= 0x3FFFu)
+	{
+		return m_uLastOpenBus = ReadPalette(address);
+	}
 
-        default: break;
-    }
-    return 0;
+	return 0u;
 }
 
 bool CPPU::Write(const Address &address, const uint8_t &data)
 {
-    switch(address)
-    {
-        // Pattern
-        case 0x0000u ... 0x1FFFu: return m_pRefMainBoard->CartridgeWriteCHR(address, data);
+	// Pattern
+	if (address >= 0x0000u && address <= 0x1FFFu)
+	{
+		return m_pRefMainBoard->CartridgeWriteCHR(address, data);
+	}
 
-        // Name Table
-        case 0x2000u ... 0x2FFFu:
-        case 0x3000u ... 0x3EFFu:
-            m_NameTables[m_pRefMainBoard->CartridgeNameTableMirroring(address)] = data;
-            return true;
+	// Name Table
+	if (address >= 0x2000u && address <= 0x3EFFu)
+	{
+		m_NameTables[m_pRefMainBoard->CartridgeNameTableMirroring(address)] = data;
+		return true;
+	}
 
-        // Palette
-        case 0x3F00u ... 0x3FFFu:
-            WritePalette(address, data);
-            return true;
+	// Palette
+	if (address >= 0x3F00u && address <= 0x3FFFu)
+	{
+		WritePalette(address, data);
+		return true;
+	}
 
-        default: break;
-    }
-    return false;
+	return false;
 }
 
 uint8_t CPPU::ReadPalette(const Address &address)
@@ -798,28 +802,30 @@ void CPPU::HandleScanline()
 void CPPU::SpriteRun()
 {
     // 按照周期来处理精灵与背景
-    switch(m_nClocks)
-    {
-        // 1-64周期, 清除次级OAM buffer (32个字节) -> 移到BeginSpriteEvaluation中
-        case 1 ... 64:
-            ClearNextOAMData();
-            break;
+	if (m_nClocks >= 1 && m_nClocks <= 64)
+	{
+		// 1-64周期, 清除次级OAM buffer (32个字节) -> 移到BeginSpriteEvaluation中
+		ClearNextOAMData();
+		return;
+	}
 
-        // 65-256周期, Sprite evaluation
-        case 65 ... 256:
-            // Secondary OAM clear and sprite evaluation do not occur on the pre-render line.
-            if(m_nClocks == 65) BeginSpriteEvaluation();
-            if(GetScanlineType() == ScanLineType::PreRender)
-                return;
-            OnSpriteEvaluation();
-            break;
+	// 65-256周期, Sprite evaluation
+	if (m_nClocks >= 65 && m_nClocks <= 256)
+	{
+		// Secondary OAM clear and sprite evaluation do not occur on the pre-render line.
+		if (m_nClocks == 65) BeginSpriteEvaluation();
+		if (GetScanlineType() != ScanLineType::PreRender)
+			OnSpriteEvaluation();
+		return;
+	}
 
-            // 257-320周期, Sprite fetches (8 sprites total, 8 cycles per sprite)
-        case 257 ... 320:
-            if(m_nClocks == 257) BeginSpriteFetches();
-            OnSpriteFetches();
-            break;
-    }
+	// 257-320周期, Sprite fetches (8 sprites total, 8 cycles per sprite)
+	if (m_nClocks >= 257 && m_nClocks <= 320)
+	{
+		if (m_nClocks == 257) BeginSpriteFetches();
+		OnSpriteFetches();
+		//return;
+	}
 }
 
 uint8_t CPPU::SpriteHeight() const
@@ -1010,29 +1016,36 @@ void CPPU::OnSpriteFetches()
 
 void CPPU::BackgroundRun()
 {
-    switch(m_nClocks)
-    {
-        case 1:
-        case 321:
-        case 339:
-            BeginTileFetches();
-        case 2 ... 256:
-        case 322 ... 337:
-            OnTileFetches();
-            m_bEnableBGShifter = true;
-            break;
+	// 处理背景
+	if ((m_nClocks >= 1 && m_nClocks <= 257) || (m_nClocks >= 321 && m_nClocks <= 339))
+	{
+        if(m_nClocks == 338) return;
 
-        case 257:
-            ShiftBackgroundRegisters();
-            ReloadBackgroundRegisters();
-            ReloadHorizontal();
-            break;
+		if (m_nClocks == 257)
+		{
+			// hori(v) = hori(t)
+			ShiftBackgroundRegisters();
+			ReloadBackgroundRegisters();
+			ReloadHorizontal();
+			return;
+		}
 
-        case 280 ... 304:
-            if(GetScanlineType() == ScanLineType::PreRender)
-                ReloadVertical();
-            break;
-    }
+		if (m_nClocks == 1 || m_nClocks == 321 || m_nClocks == 339)
+		{
+			BeginTileFetches();
+		}
+
+		OnTileFetches();
+		m_bEnableBGShifter = true;
+		return;
+	}
+
+	if (m_nClocks >= 280 && m_nClocks <= 304)
+	{
+		if (GetScanlineType() == ScanLineType::PreRender)
+			ReloadVertical();
+		//return;
+	}
 }
 
 // 获取属性的偏移地址(最后的64个字节的偏移)
@@ -1159,8 +1172,8 @@ void CPPU::ReloadBackgroundRegisters()
     m_uBGNextPatternDataL = m_uTmpBGPatternLatchL;
     m_uBGNextPatternDataH = m_uTmpBGPatternLatchH;
 
-    m_uBGNextAttributeLatchL = (m_uTmpATByteLatch & 0x1u) != 0;
-    m_uBGNextAttributeLatchH = (m_uTmpATByteLatch & 0x2u) != 0;
+    m_uBGNextAttributeLatchL = ((m_uTmpATByteLatch & 0x1u) != 0) ? 1u : 0u;
+    m_uBGNextAttributeLatchH = ((m_uTmpATByteLatch & 0x2u) != 0) ? 1u : 0u;
 }
 
 void CPPU::ClearTileDataCache()
@@ -1169,8 +1182,8 @@ void CPPU::ClearTileDataCache()
     m_uBGActivedPatternDataH = 0u;
     m_uBGActivedAttributeDataL = 0u;
     m_uBGActivedAttributeDataH = 0u;
-    m_uBGNextAttributeLatchL = false;
-    m_uBGNextAttributeLatchH = false;
+    m_uBGNextAttributeLatchL = 0u;
+    m_uBGNextAttributeLatchH = 0u;
     m_uBGNextPatternDataL = 0u;
     m_uBGNextPatternDataH = 0u;
     m_bEnableBGShifter = false;

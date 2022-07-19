@@ -1,8 +1,12 @@
 
+#if defined(_MSC_VER)
+#define SDL_MAIN_HANDLED
+#endif
+
 #include "Core/NesXFrame.h"
 
 #ifdef _WIN32
-int SDL_UNUSED SDL_main(SDL_UNUSED int argc, SDL_UNUSED char *argv[])
+int SDL_UNUSED main(SDL_UNUSED int argc, SDL_UNUSED char *argv[])
 #else
 int main()
 #endif
@@ -10,7 +14,7 @@ int main()
     CNesXFrame frame;
     if (frame.Init())
     {
-        frame.LoadGame("Others/nestest.nes");
+        frame.LoadGame("./nestest.nes");
         frame.Update();
     }
     frame.Quit();

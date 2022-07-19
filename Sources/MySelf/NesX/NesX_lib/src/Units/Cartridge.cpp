@@ -1,5 +1,4 @@
-
-#include "Units/Cartridge.h"
+﻿#include "Units/Cartridge.h"
 #include "Core/NesHeader.h"
 #include "Core/BaseMapper.h"
 #include "Core/MapperFactory.h"
